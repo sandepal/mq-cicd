@@ -75,7 +75,7 @@ spec:
           value: ucqm2-cert-secret
         - name: common-name
           value: ibmwebspheremqucqm2
-  
+
     # Deploy IBM MQ
     - name: deploy-mq
       retries: 0
@@ -92,8 +92,8 @@ spec:
       workspaces:
         - name: git-source
           workspace: git-source
-		  
-	- name: test-qm-connectivity
+  
+    - name: test-qm-connectivity
       runAfter:
         - deploy-mq
       taskRef:
@@ -106,10 +106,10 @@ spec:
         - name: queue-name
           value: TEST.QUEUE
         - name: namespace
-          value: {{NAMESPACE}}	
-		  		  
-		  
----	  
+          value: {{NAMESPACE}}
+  
+  
+---  
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
@@ -123,7 +123,7 @@ spec:
       type: string
     - name: queue-name
       type: string
-	- name: namespace
+    - name: namespace
       type: string
   steps:
     - name: test-put-get
@@ -135,7 +135,7 @@ spec:
         export QMGR=$(params.qm-name)        
         export PORT=$(params.qm-port)
         export QUEUE=$(params.queue-name)
-				
+
         NAMESPACE=$(params.namespace)
         HOST="${QMGR}-ibm-mq.${NAMESPACE}.svc"
         
@@ -154,7 +154,7 @@ spec:
         
         echo "Deleting test queue $QUEUE"
         /opt/mqm/bin/runmqsc $QMGR < delete.mqsc 
-		  
+          
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
