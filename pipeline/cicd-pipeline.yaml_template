@@ -107,6 +107,8 @@ spec:
           value: TEST.QUEUE
         - name: namespace
           value: {{NAMESPACE}}
+        - name: channel
+          value: UNICLUSTER_CHL
   
   
 ---  
@@ -125,6 +127,8 @@ spec:
       type: string
     - name: namespace
       type: string
+    - name: channel
+      type: string
   steps:
     - name: test-put-get
       image: cp.icr.io/cp/ibm-mqadvanced-server-integration:9.4.1.0-r2
@@ -138,9 +142,12 @@ spec:
         export QMGR=$(params.qm-name)        
         export PORT=$(params.qm-port)
         export QUEUE=$(params.queue-name)
+        export CHANNEL=$(params.channel)
+        
 
         export NAMESPACE=$(params.namespace)
         export HOST="${QMGR}-ibm-mq.${NAMESPACE}.svc"
+        export MQSERVER="${CHANNEL}/TCP/${HOST}(${PORT})"
         
         echo "QMGR: $QMGR"
         echo "PORT: $PORT"
@@ -153,19 +160,18 @@ spec:
         
         echo "Creating test queue $QUEUE on $QMGR"
         
-        echo "DEFINE QLOCAL('$QUEUE')" > create.mqsc
-        echo "DELETE QLOCAL('$QUEUE')" > delete.mqsc
+        echo "DEFINE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc $QMGR
         
         /opt/mqm/bin/runmqsc $QMGR < create.mqsc
         
         echo "Putting test message to $QUEUE"
-        echo "This is a test message" | /opt/mqm/samp/bin/amqsput $QUEUE $QMGR -h $HOST -p $PORT
+        echo "This is a test message" | /opt/mqm/samp/bin/amqsput $QUEUE $QMGR
         
         echo "Getting test message from $QUEUE"
-        /opt/mqm/samp/bin/amqsget $QUEUE $QMGR -h $HOST -p $PORT
+        /opt/mqm/samp/bin/amqsget $QUEUE $QMGR
         
         echo "Deleting test queue $QUEUE"
-        /opt/mqm/bin/runmqsc $QMGR < delete.mqsc 
+        echo "DELETE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc $QMGR
           
 ---
 apiVersion: tekton.dev/v1beta1

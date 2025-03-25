@@ -58,7 +58,7 @@ spec:
           items:
             - uniformcluster.mqsc
     availability:
-      type: NativeHA
+      type: SingleInstance
     readinessProbe:
       periodSeconds: 1
       failureThreshold: 5
