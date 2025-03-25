@@ -30,6 +30,12 @@ spec:
         items:
           - tls.key
           - tls.crt
+    trust:
+    - name: trust-ucqm2
+      secret:  
+        secretName: ucqm2-cert-secret
+        items:
+          - tls.crt
   storage:
       defaultClass: ocs-storagecluster-ceph-rbd
       queueManager:
