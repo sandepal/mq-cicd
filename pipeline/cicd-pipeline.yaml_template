@@ -1,0 +1,318 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: infinite-base-pipeline
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: imageTag
+      type: string
+      description: The image tag
+    - name: branch
+      type: string
+      default: main
+      description: The phase of this pipeline, initial, scale, upgrade, etc
+  workspaces:
+    - name: git-source
+  tasks:
+    - name: clone-git-source
+      retries: 0
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: "{{REPO}}"
+        - name: subdirectory
+          value: ""
+        - name: deleteExisting
+          value: "true"
+        - name: revision
+          value: "$(params.branch)"
+      workspaces:
+        - name: output
+          workspace: git-source
+
+    - name: create-cert-ucqm1
+      runAfter:
+        - clone-git-source
+      taskRef:
+        name: create-mq-cert
+      params:
+        - name: namespace
+          value: {{NAMESPACE}}
+        - name: cert-name
+          value: ucqm1-cert
+        - name: secret-name
+          value: ucqm1-cert-secret
+        - name: common-name
+          value: ibmwebspheremqucqm1
+    
+    - name: create-cert-ucqm2
+      runAfter:
+        - clone-git-source
+      taskRef:
+        name: create-mq-cert
+      params:
+        - name: namespace
+          value: {{NAMESPACE}}
+        - name: cert-name
+          value: ucqm2-cert
+        - name: secret-name
+          value: ucqm2-cert-secret
+        - name: common-name
+          value: ibmwebspheremqucqm2
+  
+    # Deploy IBM MQ
+    - name: deploy-mq
+      retries: 0
+      runAfter:
+        - create-cert-ucqm1
+        - create-cert-ucqm2
+      taskRef:
+        name: run-script
+      params:
+        - name: script
+          value: "mq/uniformcluster/deploy.sh"
+        - name: params
+          value: " {{NAMESPACE}} $(params.branch)"
+      workspaces:
+        - name: git-source
+          workspace: git-source
+		  
+	- name: test-qm-connectivity
+      runAfter:
+        - deploy-mq
+      taskRef:
+        name: test-mq-connectivity
+      params:
+        - name: qm-port
+          value: "1414"
+        - name: qm-name
+          value: UCQM1
+        - name: queue-name
+          value: TEST.QUEUE
+        - name: namespace
+          value: {{NAMESPACE}}	
+		  		  
+		  
+---	  
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: test-mq-connectivity
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: qm-port
+      type: string
+    - name: qm-name
+      type: string
+    - name: queue-name
+      type: string
+	- name: namespace
+      type: string
+  steps:
+    - name: test-put-get
+      image: cp.icr.io/cp/ibm-mqadvanced-server-integration:9.4.1.0-r2
+      script: |
+        #!/bin/bash
+        set -e
+
+        export QMGR=$(params.qm-name)        
+        export PORT=$(params.qm-port)
+        export QUEUE=$(params.queue-name)
+				
+        NAMESPACE=$(params.namespace)
+        HOST="${QMGR}-ibm-mq.${NAMESPACE}.svc"
+        
+        echo "Creating test queue $QUEUE on $QMGR"
+        
+        echo "DEFINE QLOCAL('$QUEUE')" > create.mqsc
+        echo "DELETE QLOCAL('$QUEUE')" > delete.mqsc
+        
+        /opt/mqm/bin/runmqsc $QMGR < create.mqsc
+        
+        echo "Putting test message to $QUEUE"
+        echo "This is a test message" | /opt/mqm/samp/bin/amqsput $QUEUE $QMGR -h $HOST -p $PORT
+        
+        echo "Getting test message from $QUEUE"
+        /opt/mqm/samp/bin/amqsget $QUEUE $QMGR -h $HOST -p $PORT
+        
+        echo "Deleting test queue $QUEUE"
+        /opt/mqm/bin/runmqsc $QMGR < delete.mqsc 
+		  
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-script
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: script
+      type: string
+      description: The full path to the script relative to the git workspace
+    - name: params
+      type: string
+      description: The parameters to pass to the script when calling
+  workspaces:
+    - name: git-source
+  steps:
+    - name: oc
+      image: quay.io/openshift/origin-cli:latest
+      script: "/workspace/git-source/$(params.script) $(params.params)"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: create-mq-cert
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: namespace
+      type: string
+      default: default
+    - name: cert-name
+      type: string
+      default: mq-uc-cert
+    - name: secret-name
+      type: string
+      default: mq-key-store
+    - name: common-name
+      type: string
+      default: mq.ibm.com
+  steps:
+    - name: apply-cert-resources
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+
+        cat <<EOF | oc apply -f -
+        apiVersion: cert-manager.io/v1
+        kind: Issuer
+        metadata:
+          name: selfsigning-issuer
+          namespace: $(params.namespace)
+        spec:
+          selfSigned: {}
+        ---
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: $(params.cert-name)
+          namespace: $(params.namespace)
+        spec:
+          secretName: $(params.secret-name)
+          duration: 8760h
+          renewBefore: 360h
+          commonName: $(params.common-name)
+          issuerRef:
+            name: selfsigning-issuer
+            kind: Issuer
+        EOF
+    - name: wait-for-secret
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+
+        echo "Waiting for secret '$(params.secret-name)' to be created..."
+        for i in {1..30}; do
+          oc get secret $(params.secret-name) -n $(params.namespace) && exit 0
+          sleep 5
+        done
+
+        echo "Timed out waiting for secret."
+        exit 1
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: infinite-base-pipeline-triggertemplate
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: branch
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: infinite-base-pipelinerun-$(uid)
+      spec:
+        pipelineRef:
+          name: infinite-base-pipeline
+        serviceAccountName: pipeline-admin
+        podTemplate:
+          securityContext:
+            runAsUser: 0
+            supplementalGroups:
+              - 65531
+              - 65534
+            fsGroup: 65532
+        workspaces:
+          - name: git-source
+            persistentvolumeclaim:
+              claimName: git-source-workspace2
+        params:
+          - name: imageTag
+            value: $(uid)
+          - name: branch
+            value: $(tt.params.branch)
+        timeout: "20m"
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: infinite-base-pipeline-triggerbinding
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+  - name: branch
+    value: $(body.branch)
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: infinite-base-pipeline-event-listener
+  namespace: {{NAMESPACE}}
+spec:
+  serviceAccountName: pipeline-admin
+  triggers:
+    - name: infinite-base-pipeline-trigger
+      bindings:
+        - ref: infinite-base-pipeline-triggerbinding
+      template:
+        ref: infinite-base-pipeline-triggertemplate
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: EventListener
+    app.kubernetes.io/part-of: Triggers
+    eventlistener: infinite-base-pipeline-event-listener
+  name: el-infinite-base-pipeline-trigger-route
+  namespace: {{NAMESPACE}}
+spec:
+  host: ""
+  port:
+    targetPort: http-listener
+  to:
+    kind: Service
+    name: el-infinite-base-pipeline-event-listener
+    weight: null
