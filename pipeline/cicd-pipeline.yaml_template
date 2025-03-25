@@ -163,8 +163,8 @@ spec:
         
         echo "=== Creating client key database from mounted cert ==="
         cd $(workspaces.ucmq1-client-cert.path)
-        runmqckm -keydb -create -db mqclient.kdb -pw changeit -type cms -stash
-        runmqckm -cert -add -db mqclient.kdb -pw changeit -label ibmwebspheremqucqm1 -file tls.crt -format ascii
+        /opt/mqm/bin/runmqckm -keydb -create -db mqclient.kdb -pw changeit -type cms -stash
+        /opt/mqm/bin/runmqckm -cert -add -db mqclient.kdb -pw changeit -label ibmwebspheremqucqm1 -file tls.crt -format ascii
         export MQSSLKEYR="$(workspaces.ucmq1-client-cert.path)/mqclient"
         
         echo "Creating test queue $QUEUE on $QMGR"        
