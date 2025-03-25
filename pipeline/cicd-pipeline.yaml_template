@@ -103,7 +103,7 @@ spec:
         - name: qm-port
           value: "1414"
         - name: qm-name
-          value: UCQM1
+          value: ucqm1
         - name: queue-name
           value: TEST.QUEUE
         - name: namespace
@@ -256,6 +256,10 @@ spec:
           issuerRef:
             name: selfsigning-issuer
             kind: Issuer
+          isCA: false
+          usages:
+            - server auth
+            - client auth
         EOF
     - name: wait-for-secret
       image: quay.io/openshift/origin-cli:latest
