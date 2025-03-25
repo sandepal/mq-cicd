@@ -131,13 +131,25 @@ spec:
       script: |
         #!/bin/bash
         set -e
-
+        set -x  # Optional, for verbose command tracing
+        
+        echo "=== Setting up environment variables ==="
+        
         export QMGR=$(params.qm-name)        
         export PORT=$(params.qm-port)
         export QUEUE=$(params.queue-name)
 
-        NAMESPACE=$(params.namespace)
-        HOST="${QMGR}-ibm-mq.${NAMESPACE}.svc"
+        export NAMESPACE=$(params.namespace)
+        export HOST="${QMGR}-ibm-mq.${NAMESPACE}.svc"
+        
+        echo "QMGR: $QMGR"
+        echo "PORT: $PORT"
+        echo "QUEUE: $QUEUE"
+        echo "NAMESPACE: $NAMESPACE"
+        echo "HOST: $HOST"
+        
+        echo "=== Checking connectivity to $HOST:$PORT ==="
+        timeout 5 bash -c "</dev/tcp/$HOST/$PORT" && echo "Port $PORT is open on $HOST" || { echo "Cannot connect to $HOST:$PORT"; exit 1; }
         
         echo "Creating test queue $QUEUE on $QMGR"
         
