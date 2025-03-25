@@ -27,6 +27,7 @@ spec:
       description: The phase of this pipeline, initial, scale, upgrade, etc
   workspaces:
     - name: git-source
+    - name: ucmq1-client-cert
   tasks:
     - name: clone-git-source
       retries: 0
