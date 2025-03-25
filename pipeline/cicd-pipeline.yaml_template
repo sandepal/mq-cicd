@@ -158,11 +158,8 @@ spec:
         echo "=== Checking connectivity to $HOST:$PORT ==="
         timeout 5 bash -c "</dev/tcp/$HOST/$PORT" && echo "Port $PORT is open on $HOST" || { echo "Cannot connect to $HOST:$PORT"; exit 1; }
         
-        echo "Creating test queue $QUEUE on $QMGR"
-        
-        echo "DEFINE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc $QMGR
-        
-        /opt/mqm/bin/runmqsc $QMGR < create.mqsc
+        echo "Creating test queue $QUEUE on $QMGR"        
+        echo "DEFINE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc -w 30 -c $QMGR
         
         echo "Putting test message to $QUEUE"
         echo "This is a test message" | /opt/mqm/samp/bin/amqsput $QUEUE $QMGR
@@ -171,7 +168,7 @@ spec:
         /opt/mqm/samp/bin/amqsget $QUEUE $QMGR
         
         echo "Deleting test queue $QUEUE"
-        echo "DELETE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc $QMGR
+        echo "DELETE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc -w 30 -c $QMGR
           
 ---
 apiVersion: tekton.dev/v1beta1
