@@ -31,7 +31,7 @@ spec:
           - tls.key
           - tls.crt
     trust:
-    - name: trust-ucqm1
+    - name: trustucqm1
       secret:  
         secretName: ucqm1-cert-secret
         items:
