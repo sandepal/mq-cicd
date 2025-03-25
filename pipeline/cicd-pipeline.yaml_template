@@ -170,7 +170,10 @@ spec:
 
         /opt/mqm/bin/runmqakm -keydb -create -db mqclient.kdb -pw changeit -type cms -stash
         /opt/mqm/bin/runmqakm -cert -add -db mqclient.kdb -pw changeit -label ibmwebspheremqucqm1 -file tls.crt -format ascii
+        /opt/mqm/bin/runmqakm -cert -add -db mqclient.kdb -pw changeit -label ca-cert -file ca.crt -format ascii
         export MQSSLKEYR="/tmp/mqcert/mqclient"
+        
+        ls -la /tmp/mqcert/
         
         echo "Creating test queue $QUEUE on $QMGR"        
         echo "DEFINE QLOCAL('$QUEUE')" | /opt/mqm/bin/runmqsc -w 30 -c $QMGR
