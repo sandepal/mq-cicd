@@ -109,8 +109,10 @@ spec:
           value: {{NAMESPACE}}
         - name: channel
           value: UNICLUSTER_CHL
-  
-  
+      workspaces:
+        - name: ucmq1-client-cert
+          workspace: ucmq1-client-cert  
+
 ---  
 apiVersion: tekton.dev/v1beta1
 kind: Task
