@@ -92,6 +92,8 @@ spec:
       script: |
         #!/bin/sh
         set -e
+        set -x  # Optional: verbose execution
+        
         echo "Checking OpenShift registry route..."
         registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}' || true)
         if [ -z "$registry" ]; then
@@ -110,6 +112,8 @@ spec:
       script: |
         #!/bin/sh
         set -e
+        set -x  # Optional: verbose execution
+        
         cd /workspace/git-ws
         echo "Cloning Git repo..."
         git clone $(params.git-source-url) repo
