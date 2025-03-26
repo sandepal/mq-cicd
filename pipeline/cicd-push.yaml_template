@@ -19,9 +19,9 @@ metadata:
 spec:
   params:
     - name: git-source-url
-      value: "{{SRCREPO}}"
+      default: "{{SRCREPO}}"
     - name: git-target-url
-      value: "{{TRGTREPO}}"
+      default: "{{TRGTREPO}}"
     - name: git-revision
       default: "{{BRANCH}}"
     - name: dockerfile-path

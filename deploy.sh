@@ -52,7 +52,7 @@ oc create secret generic $SECRET_NAME \
   -n $namespace \
   --dry-run=client -o yaml | oc apply -f -
 
-echo "Secret '$SECRET_NAME' is ready in namespace '$NAMESPACE'"
+echo "Secret '$SECRET_NAME' is ready in namespace '$namespace'"
 
 
 
