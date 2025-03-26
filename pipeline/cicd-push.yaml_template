@@ -116,12 +116,11 @@ spec:
           echo "Waiting... ($i)"
           sleep 5
         done
-
-# Final check
-if ! oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
-  echo "ERROR: ImageStreamTag not found after timeout."
-  exit 1
-fi
+        # Final check
+        if ! oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
+          echo "ERROR: ImageStreamTag not found after timeout."
+          exit 1
+        fi
 
         
     - name: clone-and-build
