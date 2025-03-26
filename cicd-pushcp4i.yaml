@@ -100,7 +100,7 @@ spec:
           sleep 10
         fi
     - name: clone-and-build
-      image: quay.io/buildah/stable
+      image: image-registry.openshift-image-registry.svc:5000/cp4i/oc-cli-git:latest
       script: |
         #!/bin/sh
         set -e
