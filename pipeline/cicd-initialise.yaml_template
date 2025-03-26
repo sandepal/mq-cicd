@@ -34,8 +34,6 @@ spec:
       default: oc-cli-git
     - name: image-tag
       default: latest
-    - name: image-namespace
-      default: {{NAMESPACE}}
     - name: qmgr_name_1
       default: {{QMGR_NAME_1}}
     - name: qmgr_name_2
@@ -186,8 +184,6 @@ spec:
       value: oc-cli-git
     - name: image-tag
       value: latest
-    - name: image-namespace
-      value: {{NAMESPACE}}
     - name: qmgr_name_1
       value: {{QMGR_NAME_1}}
     - name: qmgr_name_2
