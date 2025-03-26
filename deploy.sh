@@ -80,6 +80,8 @@ oc create secret docker-registry ibm-entitlement-key \
 
 oc create serviceaccount pipeline-admin -n $namespace
 oc create clusterrolebinding cicd-pipeline-admin-crb-$namespace --clusterrole=cluster-admin --serviceaccount=$namespace:pipeline-admin
+oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:$namespace:pipeline-admin
+
 oc secrets link pipeline-admin ibm-entitlement-key --for=pull -n $namespace
 oc secrets link pipeline-admin $SECRET_NAME --for=mount -n $namespace
 
