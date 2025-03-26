@@ -25,7 +25,7 @@ spec:
     - name: git-revision
       default: "{{BRANCH}}"
     - name: dockerfile-path
-      default: docker/oc-cli-git/Dockerfile
+      default: docker/oc-cli-git
     - name: image-name
       default: oc-cli-git
     - name: image-tag
@@ -74,7 +74,7 @@ spec:
       default: main
     - name: dockerfile-path
       type: string
-      default: docker/oc-cli-git/Dockerfile
+      default: docker/oc-cli-git
     - name: image-name
       type: string
       default: oc-cli-git
@@ -102,8 +102,8 @@ spec:
         registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
         image="$registry/cp4i/oc-cli-git:latest"
         oc new-build --name=oc-cli-git --binary --strategy=docker
-        cd /workspace/git-ws
-        oc start-build oc-cli-git --from-dir=$(params.dockerfile-path) --follow
+        cd /workspace/git-ws/$(params.dockerfile-path)
+        oc start-build oc-cli-git --from-dir=. --follow
         
     - name: clone-and-build
       image: image-registry.openshift-image-registry.svc:5000/cp4i/oc-cli-git:latest
@@ -152,7 +152,7 @@ spec:
     - name: git-revision
       value: "{{BRANCH}}"
     - name: dockerfile-path
-      value: docker/oc-cli-git/Dockerfile
+      value: docker/oc-cli-git
     - name: image-name
       value: oc-cli-git
     - name: image-tag

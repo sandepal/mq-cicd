@@ -99,6 +99,12 @@ spec:
           oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"defaultRoute":true}}'
           sleep 10
         fi
+        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
+        image="$registry/cp4i/oc-cli-git:latest"
+        oc new-build --name=oc-cli-git --binary --strategy=docker
+        cd /workspace/git-ws
+        oc start-build oc-cli-git --from-dir=$(params.dockerfile-path) --follow
+        
     - name: clone-and-build
       image: image-registry.openshift-image-registry.svc:5000/cp4i/oc-cli-git:latest
       script: |
