@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
     - name: git-source-url
-      default: "{{SRCREPO}}"
+      value: "{{SRCREPO}}"
     - name: git-target-url
       value: "{{TRGTREPO}}"
     - name: git-revision
