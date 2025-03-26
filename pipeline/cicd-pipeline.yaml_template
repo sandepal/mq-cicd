@@ -147,30 +147,22 @@ spec:
         QUEUE_NAME=$(params.queue-name)
         MQSC_CMDS=$(params.runmqsc-commands)
         
-        cat <<EOF > /tmp/test-script.sh
-#!/bin/bash
-set -e
-
-echo "Running MQSC commands line by line..."
-while IFS= read -r line; do
-  if [ -n "\$line" ]; then
-    echo ">> \$line"
-    echo "\$line" | runmqsc $QM_NAME | tee -a /tmp/mqsc-output.log
-  fi
-done <<< "$MQSC_CMDS"
-
-echo "Running amqsput..."
-echo "Hello from Tekton" | /opt/mqm/samp/bin/amqsput $QUEUE_NAME $QM_NAME
-
-echo "Running amqsget..."
-/opt/mqm/samp/bin/amqsget $QUEUE_NAME $QM_NAME
-
-echo "All commands executed successfully."
-echo "===== MQSC Output ====="
-cat /tmp/mqsc-output.log
-
-        EOF
-
+        echo '#!/bin/bash' > /tmp/test-script.sh
+        echo 'set -e' >> /tmp/test-script.sh
+        echo 'echo "Running MQSC commands line by line..."' >> /tmp/test-script.sh
+        echo 'while IFS= read -r line; do' >> /tmp/test-script.sh
+        echo '  if [ -n "$line" ]; then' >> /tmp/test-script.sh
+        echo '    echo ">> $line"' >> /tmp/test-script.sh
+        echo "    echo \"\$line\" | runmqsc $QM_NAME | tee -a /tmp/mqsc-output.log" >> /tmp/test-script.sh
+        echo '  fi' >> /tmp/test-script.sh
+        echo "done <<< \"$MQSC_CMDS\"" >> /tmp/test-script.sh
+        echo "echo \"Running amqsput...\"" >> /tmp/test-script.sh
+        echo "echo \"Hello from Tekton\" | /opt/mqm/samp/bin/amqsput $QUEUE_NAME $QM_NAME" >> /tmp/test-script.sh
+        echo "echo \"Running amqsget...\"" >> /tmp/test-script.sh
+        echo "/opt/mqm/samp/bin/amqsget $QUEUE_NAME $QM_NAME" >> /tmp/test-script.sh
+        echo "echo \"All commands executed successfully.\"" >> /tmp/test-script.sh
+        echo "echo \"===== MQSC Output =====\"" >> /tmp/test-script.sh
+        echo "cat /tmp/mqsc-output.log" >> /tmp/test-script.sh
         
         chmod +x /tmp/test-script.sh
         echo "Copying script into pod..."
