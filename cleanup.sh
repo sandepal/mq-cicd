@@ -13,12 +13,12 @@ namespace=${1:-"cp4i"}
 #oc new-project $namespace
 oc project $namespace
 
-hostname=$(oc get route el-infinite-cleanup-pipeline-trigger-route -o jsonpath={.spec.host})
-
-response=$(curl -d "{}" $hostname)
-echo $response
-
-sleep 60s
+#hostname=$(oc get route el-infinite-cleanup-pipeline-trigger-route -o jsonpath={.spec.host})
+#
+#response=$(curl -d "{}" $hostname)
+#echo $response
+#
+#sleep 60s
 
 oc delete pipelineruns --all -n $namespace
 oc delete pipeline --all -n $namespace

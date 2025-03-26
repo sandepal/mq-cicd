@@ -86,11 +86,11 @@ oc secrets link pipeline-admin $SECRET_NAME --for=mount -n $namespace
 oc apply -f pipeline/git-clone-task.yaml
 sleep 10
 
-cat pipeline/cicd-environment-setup.yaml_template |
-       sed "s#{{DEFAULT_FILE_STORAGE}}#$file_storage#g;" |
-       sed "s#{{NAMESPACE}}#$namespace#g;" > cicd-environment-setup$namespace.yaml
-oc apply -f cicd-environment-setup$namespace.yaml
-rm cicd-environment-setup$namespace.yaml
+#cat pipeline/cicd-environment-setup.yaml_template |
+#       sed "s#{{DEFAULT_FILE_STORAGE}}#$file_storage#g;" |
+#       sed "s#{{NAMESPACE}}#$namespace#g;" > cicd-environment-setup$namespace.yaml
+#oc apply -f cicd-environment-setup$namespace.yaml
+#rm cicd-environment-setup$namespace.yaml
 
 cat pipeline/cicd-storage.yaml_template |
        sed "s#{{DEFAULT_FILE_STORAGE}}#$file_storage#g;" |
@@ -98,6 +98,23 @@ cat pipeline/cicd-storage.yaml_template |
 
 oc apply -f cicd-storage$namespace.yaml
 rm cicd-storage$namespace.yaml
+
+export SRCREPO=https://github.com/sandepal/mq-cicd.git
+export TRGTREPO=https://github.com/sandepal/mq-argocd.git
+export BRANCH=main
+export TARGET_NAMESPACE=${1:-"cp4i"}
+export QMGR_NAME_1=ucqm1
+export QMGR_NAME_2=ucqm2
+
+cat pipeline/cicd-push.yaml_template |
+       sed "s#{{SRCREPO}}#$SRCREPO#g;" |
+	   sed "s#{{TRGTREPO}}#$TRGTREPO#g;" |
+       sed "s#{{NAMESPACE}}#$TARGET_NAMESPACE#g;" |
+       sed "s#{{BRANCH}}#$BRANCH#g;" |
+       sed "s#{{QMGR_NAME_1}}#$QMGR_NAME_1#g;" |
+       sed "s#{{QMGR_NAME_2}}#$QMGR_NAME_2#g;" > cicd-push$namespace.yaml
+oc apply -f cicd-push$namespace.yaml
+rm cicd-push$namespace.yaml
 
 sleep 30
 

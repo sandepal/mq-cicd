@@ -1,0 +1,154 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-push-deploy-pipeline
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: git-source-url
+      default: "{{SRCREPO}}"
+    - name: git-target-url
+      value: "{{TRGTREPO}}"
+    - name: git-revision
+      default: "{{BRANCH}}"
+    - name: dockerfile-path
+      default: docker/oc-cli-git/Dockerfile
+    - name: image-name
+      default: oc-cli-git
+    - name: image-tag
+      default: latest
+    - name: image-namespace
+      default: {{NAMESPACE}}
+  workspaces:
+    - name: git-ws
+  tasks:
+    - name: build-push-deploy
+      taskRef:
+        name: build-push-deploy-oc-git
+      params:
+        - name: git-source-url
+          value: $(params.git-source-url)
+        - name: git-target-url
+          value: $(params.git-target-url)
+        - name: git-revision
+          value: $(params.git-revision)
+        - name: dockerfile-path
+          value: $(params.dockerfile-path)
+        - name: image-name
+          value: $(params.image-name)
+        - name: image-tag
+          value: $(params.image-tag)
+        - name: image-namespace
+          value: $(params.image-namespace)
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-push-deploy-oc-git
+  namespace: cp4i
+spec:
+  params:
+    - name: git-source-url
+      type: string
+    - name: git-target-url
+      type: string
+    - name: git-revision
+      type: string
+      default: main
+    - name: dockerfile-path
+      type: string
+      default: docker/oc-cli-git/Dockerfile
+    - name: image-name
+      type: string
+      default: oc-cli-git
+    - name: image-tag
+      type: string
+      default: latest
+    - name: image-namespace
+      type: string
+      default: cp4i
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: enable-registry
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Checking OpenShift registry route..."
+        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}' || true)
+        if [ -z "$registry" ]; then
+          echo "Enabling default registry route..."
+          oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"defaultRoute":true}}'
+          sleep 10
+        fi
+    - name: clone-and-build
+      image: quay.io/buildah/stable
+      script: |
+        #!/bin/sh
+        set -e
+        cd /workspace/git-ws
+        echo "Cloning Git repo..."
+        git clone $(params.git-source-url) repo
+        cd repo
+        git checkout $(params.git-revision)
+
+        echo "Getting registry info..."
+        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
+        image=$registry/$(params.image-namespace)/$(params.image-name):$(params.image-tag)
+
+        echo "Building image: $image"
+        buildah bud -f $(params.dockerfile-path) -t $image .
+
+        echo "Logging in and pushing..."
+        buildah login -u $(oc whoami) -p $(oc whoami -t) $registry
+        buildah push $image
+
+        echo "Image successfully pushed: $image"
+    
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: build-push-deploy-pipelinerun
+  namespace: {{NAMESPACE}}
+spec:
+  pipelineRef:
+    name: build-push-deploy-pipeline
+  workspaces:
+    - name: git-ws
+      persistentvolumeclaim:
+        claimName: git-source-workspace2
+  params:
+    - name: git-source-url
+      value: "{{SRCREPO}}"
+    - name: git-target-url
+      value: "{{TRGTREPO}}"
+    - name: git-revision
+      value: "{{BRANCH}}"
+    - name: dockerfile-path
+      value: docker/oc-cli-git/Dockerfile
+    - name: image-name
+      value: oc-cli-git
+    - name: image-tag
+      value: latest
+    - name: image-namespace
+      value: {{NAMESPACE}}
