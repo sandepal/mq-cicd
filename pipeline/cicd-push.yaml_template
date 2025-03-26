@@ -133,6 +133,7 @@ metadata:
 spec:
   pipelineRef:
     name: build-push-deploy-pipeline
+  serviceAccountName: pipeline-admin
   workspaces:
     - name: git-ws
       persistentvolumeclaim:
