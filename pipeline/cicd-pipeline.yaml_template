@@ -134,23 +134,15 @@ spec:
       script: |
         #!/bin/bash
         set -e
-        set -x  # Optional, for verbose command tracing
+        set -x  # Optional: verbose execution
         
         echo "Finding pod..."
         POD=$(oc get pod -l app.kubernetes.io/instance=$(params.qm-name) -o jsonpath='{.items[0].metadata.name}')
         echo "Found pod: $POD"
-                
+        
         echo "Creating remote test script..."
         QM_NAME=$(params.qm-name)
         QUEUE_NAME=$(params.queue-name)
-        MQSC_CMDS="$(params.runmqsc-commands)"
-        echo "DEBUG: MQSC_CMDS raw value:"
-        echo "$MQSC_CMDS"
-        
-        echo "DEBUG: Parsed MQSC_CMDS lines:"
-        while IFS= read -r line; do
-          echo "LINE: $line"
-        done <<< "$MQSC_CMDS"       
         
         echo '#!/bin/bash' > /tmp/test-script.sh
         echo 'set -e' >> /tmp/test-script.sh
@@ -160,7 +152,7 @@ spec:
         echo '    echo ">> $line"' >> /tmp/test-script.sh
         echo "    echo \"\$line\" | runmqsc $QM_NAME | tee -a /tmp/mqsc-output.log" >> /tmp/test-script.sh
         echo '  fi' >> /tmp/test-script.sh
-        echo "done <<< \"$MQSC_CMDS\"" >> /tmp/test-script.sh
+        echo "done <<< \"$(params.runmqsc-commands)\"" >> /tmp/test-script.sh
         echo "echo \"Running amqsput...\"" >> /tmp/test-script.sh
         echo "echo \"Hello from Tekton\" | /opt/mqm/samp/bin/amqsput $QUEUE_NAME $QM_NAME" >> /tmp/test-script.sh
         echo "echo \"Running amqsget...\"" >> /tmp/test-script.sh
