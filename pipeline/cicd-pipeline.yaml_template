@@ -119,16 +119,15 @@ metadata:
   namespace: {{NAMESPACE}}
 spec:
   params:
-    - name: qm-port
-      type: string
     - name: qm-name
       type: string
     - name: queue-name
       type: string
     - name: namespace
       type: string
-    - name: channel
+    - name: runmqsc-commands
       type: string
+      
   workspaces:
     - name: ucmq1-client-cert
   steps:
@@ -143,7 +142,6 @@ spec:
         POD=$(oc get pod -l app.kubernetes.io/instance=$(params.qm-name) -o jsonpath='{.items[0].metadata.name}')
         echo "Found pod: $POD"
                 
-        echo "Creating remote test script..."
         echo "Creating remote test script..."
         QM_NAME=$(params.qm-name)
         QUEUE_NAME=$(params.queue-name)
