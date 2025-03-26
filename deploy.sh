@@ -114,11 +114,11 @@ cat pipeline/cicd-push.yaml_template |
        sed "s#{{QMGR_NAME_1}}#$QMGR_NAME_1#g;" |
        sed "s#{{QMGR_NAME_2}}#$QMGR_NAME_2#g;" > cicd-push$namespace.yaml
 oc apply -f cicd-push$namespace.yaml
-rm cicd-push$namespace.yaml
+#rm cicd-push$namespace.yaml
 
-sleep 30
+#sleep 30
 
-URL=$( oc get routes -n $namespace el-environment-setup-pipeline-trigger-route -o jsonpath={.spec.host})
-echo {\"namespace\": \"$namespace\"} >> JSON$namespace
-curl -d @JSON$namespace http://$URL
-rm JSON$namespace
+#URL=$( oc get routes -n $namespace el-environment-setup-pipeline-trigger-route -o jsonpath={.spec.host})
+#echo {\"namespace\": \"$namespace\"} >> JSON$namespace
+#curl -d @JSON$namespace http://$URL
+#rm JSON$namespace
