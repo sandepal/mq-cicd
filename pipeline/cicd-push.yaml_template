@@ -35,16 +35,10 @@ spec:
   workspaces:
     - name: git-ws
   tasks:
-    - name: build-push-deploy
+    - name: enable-registry
       taskRef:
-        name: build-push-deploy-oc-git
+        name: enable-registry-and-build-image
       params:
-        - name: git-source-url
-          value: $(params.git-source-url)
-        - name: git-target-url
-          value: $(params.git-target-url)
-        - name: git-revision
-          value: $(params.git-revision)
         - name: dockerfile-path
           value: $(params.dockerfile-path)
         - name: image-name
@@ -57,17 +51,101 @@ spec:
         - name: git-ws
           workspace: git-ws
 
+    - name: build-push
+      runAfter:
+        - enable-registry
+      taskRef:
+        name: clone-and-build-push
+      params:
+        - name: git-source-url
+          value: $(params.git-source-url)
+        - name: git-revision
+          value: $(params.git-revision)
+        - name: dockerfile-path
+          value: $(params.dockerfile-path)/Dockerfile
+        - name: image-name
+          value: $(params.image-name)
+        - name: image-tag
+          value: $(params.image-tag)
+        - name: image-namespace
+          value: $(params.image-namespace)
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+
 ---
+# ----------------------
+# Task 1: enable-registry-and-build-image
+# ----------------------
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: build-push-deploy-oc-git
-  namespace: cp4i
+  name: enable-registry-and-build-image
+  namespace: {{NAMESPACE}}
+spec:
+  params:
+    - name: dockerfile-path
+      type: string
+      default: docker/oc-cli-git
+    - name: image-name
+      type: string
+      default: oc-cli-git
+    - name: image-tag
+      type: string
+      default: latest
+    - name: image-namespace
+      type: string
+      default: {{NAMESPACE}}
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: enable-and-build
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x  # Optional: verbose execution
+        
+        echo "Checking OpenShift registry route..."
+        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}' || true)
+        if [ -z "$registry" ]; then
+          echo "Enabling default registry route..."
+          oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"defaultRoute":true}}'
+          sleep 10
+        fi
+        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
+        image="$registry/$(params.image-namespace)/$(params.image-name):$(params.image-tag)"
+        oc new-build --name=$(params.image-name) --binary --strategy=docker -n $(params.image-namespace)
+        
+        cd /workspace/git-ws/$(params.dockerfile-path)
+        oc start-build $(params.image-name) --from-dir=. --follow -n $(params.image-namespace)
+        
+        echo "Waiting for ImageStreamTag to be available..."
+        for i in {1..30}; do
+          if oc get istag $(params.image-name):$(params.image-tag) -n $(params.image-namespace) >/dev/null 2>&1; then
+            echo "ImageStreamTag is ready!"
+            break
+          fi
+          echo "Waiting... ($i)"
+          sleep 5
+        done
+        if ! oc get istag $(params.image-name):$(params.image-tag) -n $(params.image-namespace) >/dev/null 2>&1; then
+          echo "ERROR: ImageStreamTag not found after timeout."
+          exit 1
+        fi
+
+---
+# ----------------------
+# Task 2: clone-and-build-push
+# ----------------------
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clone-and-build-push
+  namespace: {{NAMESPACE}}
 spec:
   params:
     - name: git-source-url
-      type: string
-    - name: git-target-url
       type: string
     - name: git-revision
       type: string
@@ -83,72 +161,130 @@ spec:
       default: latest
     - name: image-namespace
       type: string
-      default: cp4i
+      default: {{NAMESPACE}}
   workspaces:
     - name: git-ws
   steps:
-    - name: enable-registry
-      image: quay.io/openshift/origin-cli:latest
+    - name: build-push
+      image: image-registry.openshift-image-registry.svc:5000/{{NAMESPACE}}/oc-cli-git:latest
       script: |
         #!/bin/sh
         set -e
         set -x  # Optional: verbose execution
-        
-        echo "Checking OpenShift registry route..."
-        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}' || true)
-        if [ -z "$registry" ]; then
-          echo "Enabling default registry route..."
-          oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"defaultRoute":true}}'
-          sleep 10
-        fi
-        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
-        image="$registry/cp4i/oc-cli-git:latest"
-        oc new-build --name=oc-cli-git --binary --strategy=docker
-        cd /workspace/git-ws/$(params.dockerfile-path)
-        oc start-build oc-cli-git --from-dir=. --follow
-        
-        echo "Waiting for ImageStreamTag to be available..."
-        for i in {1..30}; do
-          if oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
-            echo "ImageStreamTag is ready!"
-            break
-          fi
-          echo "Waiting... ($i)"
-          sleep 5
-        done
-        # Final check
-        if ! oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
-          echo "ERROR: ImageStreamTag not found after timeout."
-          exit 1
-        fi
-
-        
-    - name: clone-and-build
-      image: image-registry.openshift-image-registry.svc:5000/cp4i/oc-cli-git:latest
-      script: |
-        #!/bin/sh
-        set -e
-        set -x  # Optional: verbose execution
-        
         cd /workspace/git-ws
         echo "Cloning Git repo..."
         git clone $(params.git-source-url) repo
         cd repo
         git checkout $(params.git-revision)
-
-        echo "Getting registry info..."
+        
         registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
         image=$registry/$(params.image-namespace)/$(params.image-name):$(params.image-tag)
-
+        
         echo "Building image: $image"
         buildah bud -f $(params.dockerfile-path) -t $image .
-
+        
         echo "Logging in and pushing..."
         buildah login -u $(oc whoami) -p $(oc whoami -t) $registry
         buildah push $image
 
-        echo "Image successfully pushed: $image"
-    
+
+
+
+
+
+
+
+#apiVersion: tekton.dev/v1beta1
+#kind: Task
+#metadata:
+#  name: build-push-deploy-oc-git
+#  namespace: cp4i
+#spec:
+#  params:
+#    - name: git-source-url
+#      type: string
+#    - name: git-target-url
+#      type: string
+#    - name: git-revision
+#      type: string
+#      default: main
+#    - name: dockerfile-path
+#      type: string
+#      default: docker/oc-cli-git
+#    - name: image-name
+#      type: string
+#      default: oc-cli-git
+#    - name: image-tag
+#      type: string
+#      default: latest
+#    - name: image-namespace
+#      type: string
+#      default: cp4i
+#  workspaces:
+#    - name: git-ws
+#  steps:
+#    - name: enable-registry
+#      image: quay.io/openshift/origin-cli:latest
+#      script: |
+#        #!/bin/sh
+#        set -e
+#        set -x  # Optional: verbose execution
+#        
+#        echo "Checking OpenShift registry route..."
+#        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}' || true)
+#        if [ -z "$registry" ]; then
+#          echo "Enabling default registry route..."
+#          oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"defaultRoute":true}}'
+#          sleep 10
+#        fi
+#        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
+#        image="$registry/cp4i/oc-cli-git:latest"
+#        oc new-build --name=oc-cli-git --binary --strategy=docker
+#        cd /workspace/git-ws/$(params.dockerfile-path)
+#        oc start-build oc-cli-git --from-dir=. --follow
+#        
+#        echo "Waiting for ImageStreamTag to be available..."
+#        for i in {1..30}; do
+#          if oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
+#            echo "ImageStreamTag is ready!"
+#            break
+#          fi
+#          echo "Waiting... ($i)"
+#          sleep 5
+#        done
+#        # Final check
+#        if ! oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
+#          echo "ERROR: ImageStreamTag not found after timeout."
+#          exit 1
+#        fi
+#
+#        
+#    - name: clone-and-build
+#      image: image-registry.openshift-image-registry.svc:5000/cp4i/oc-cli-git:latest
+#      script: |
+#        #!/bin/sh
+#        set -e
+#        set -x  # Optional: verbose execution
+#        
+#        cd /workspace/git-ws
+#        echo "Cloning Git repo..."
+#        git clone $(params.git-source-url) repo
+#        cd repo
+#        git checkout $(params.git-revision)
+#
+#        echo "Getting registry info..."
+#        registry=$(oc get route default-route -n openshift-image-registry --template='{{.spec.host}}')
+#        image=$registry/$(params.image-namespace)/$(params.image-name):$(params.image-tag)
+#
+#        echo "Building image: $image"
+#        buildah bud -f $(params.dockerfile-path) -t $image .
+#
+#        echo "Logging in and pushing..."
+#        buildah login -u $(oc whoami) -p $(oc whoami -t) $registry
+#        buildah push $image
+#
+#        echo "Image successfully pushed: $image"
+#    
 
 ---
 apiVersion: tekton.dev/v1beta1
