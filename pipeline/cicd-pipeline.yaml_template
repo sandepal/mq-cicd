@@ -128,8 +128,6 @@ spec:
     - name: runmqsc-commands
       type: string
       
-  workspaces:
-    - name: ucmq1-client-cert
   steps:
     - name: test-put-get
       image: quay.io/openshift/origin-cli:latest
