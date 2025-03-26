@@ -143,7 +143,14 @@ spec:
         echo "Creating remote test script..."
         QM_NAME=$(params.qm-name)
         QUEUE_NAME=$(params.queue-name)
-        MQSC_CMDS=$(params.runmqsc-commands)
+        MQSC_CMDS="$(params.runmqsc-commands)"
+        echo "DEBUG: MQSC_CMDS raw value:"
+        echo "$MQSC_CMDS"
+        
+        echo "DEBUG: Parsed MQSC_CMDS lines:"
+        while IFS= read -r line; do
+          echo "LINE: $line"
+        done <<< "$MQSC_CMDS"       
         
         echo '#!/bin/bash' > /tmp/test-script.sh
         echo 'set -e' >> /tmp/test-script.sh
