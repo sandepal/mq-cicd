@@ -9,8 +9,8 @@
 #******************************************************************************
 
 # Set Git repository and MQ details
-ci_namespace="$cp4i"
-cd_namespace="$ucqm-demo"
+ci_namespace="cp4i"
+cd_namespace="ucqm-demo"
 qmgr_name_1="ucqm1"
 qmgr_name_2="ucqm2"
 srcrepos="https://github.com/sandepal/mq-cicd.git"
