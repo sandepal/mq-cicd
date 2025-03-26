@@ -107,6 +107,23 @@ spec:
         cd /workspace/git-ws/$(params.dockerfile-path)
         oc start-build oc-cli-git --from-dir=. --follow
         
+        echo "Waiting for ImageStreamTag to be available..."
+        for i in {1..30}; do
+          if oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
+            echo "ImageStreamTag is ready!"
+            break
+          fi
+          echo "Waiting... ($i)"
+          sleep 5
+        done
+
+# Final check
+if ! oc get istag oc-cli-git:latest -n cp4i >/dev/null 2>&1; then
+  echo "ERROR: ImageStreamTag not found after timeout."
+  exit 1
+fi
+
+        
     - name: clone-and-build
       image: image-registry.openshift-image-registry.svc:5000/cp4i/oc-cli-git:latest
       script: |
