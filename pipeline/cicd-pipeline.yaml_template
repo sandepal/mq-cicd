@@ -169,7 +169,7 @@ echo "All commands executed successfully."
 echo "===== MQSC Output ====="
 cat /tmp/mqsc-output.log
 
-EOF
+        EOF
 
         
         chmod +x /tmp/test-script.sh
