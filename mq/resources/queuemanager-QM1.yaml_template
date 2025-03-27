@@ -24,14 +24,14 @@ spec:
     use: "NonProduction"
   pki:
     keys:
-    - name: personal-certs
+    - name: personalcerts
       secret:
         secretName: {{QMGR_NAME_1}}-cert-secret
         items:
           - tls.key
           - tls.crt
     trust:
-    - name: trusted-certs
+    - name: trustedcerts
       secret:  
         secretName: {{QMGR_NAME_2}}-cert-secret
         items:
