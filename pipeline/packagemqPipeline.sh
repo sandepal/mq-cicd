@@ -22,8 +22,8 @@ else
 fi
 
 cat cicd-package-mq-pipelinerun.yaml_template |
-       sed "s#{{SRCREPOS}}#$srcrepos#g;" |
-       sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
+       sed "s#{{SRCREPOS}}#$git_source_url#g;" |
+       sed "s#{{TRGTREPOS}}#$git_target_url#g;" |
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
 	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
        sed "s#{{BRANCH}}#$branch#g;" |
@@ -31,8 +31,8 @@ cat cicd-package-mq-pipelinerun.yaml_template |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-package-mq-pipelinerun$ci_namespace.yaml
 	   
 cat cicd-package-mq.yaml_template |
-       sed "s#{{SRCREPOS}}#$srcrepos#g;" |
-       sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
+       sed "s#{{SRCREPOS}}#$git_source_url#g;" |
+       sed "s#{{TRGTREPOS}}#$git_target_url#g;" |
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
 	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
        sed "s#{{BRANCH}}#$branch#g;" |
