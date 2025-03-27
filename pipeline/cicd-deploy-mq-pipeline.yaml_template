@@ -48,7 +48,7 @@ spec:
         name: create-mq-cert
       params:
         - name: namespace
-          value: {{NAMESPACE}}
+          value: {{CI_NAMESPACE}}
         - name: cert_name
           value: {{QMGR_NAME_1}}-cert
         - name: secret_name
