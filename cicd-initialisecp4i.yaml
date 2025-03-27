@@ -86,8 +86,8 @@ spec:
         - name: qmgr_name_2
           value: $(params.qmgr_name_2) 
       workspaces:
-        - name: git-source
-          workspace: git-source
+        - name: git-ws
+          workspace: git-ws
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -153,9 +153,6 @@ spec:
         
         chmod +x $(params.script)
         #./$(params.script)
-        
-        
-        
         
 ---
 apiVersion: tekton.dev/v1beta1

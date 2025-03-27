@@ -96,7 +96,12 @@ cat pipeline/cicd-initialise.yaml_template |
        sed "s#{{BRANCH}}#$branch#g;" |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-initialise$ci_namespace.yaml
-oc apply -f cicd-initialise$ci_namespace.yaml
+# Step 1: Create pipeline + tasks
+oc apply -f cicd-initialise$ci_namespace.yaml --prune -l part=ci-definition
+
+# Step 2: Then create the PipelineRun
+oc apply -f cicd-initialise$ci_namespace.yaml --prune -l part=ci-run
+
 #rm cicd-initialise$ci_namespace.yaml
 
 
