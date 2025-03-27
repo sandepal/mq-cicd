@@ -201,6 +201,8 @@ spec:
   pipelineRef:
     name: ci-init-pipeline
   serviceAccountName: pipeline-admin
+  podTemplate:
+    ttlSecondsAfterFinished: 3600  # keep pods for 1 hour after run
   workspaces:
     - name: git-ws
       persistentvolumeclaim:
