@@ -157,7 +157,7 @@ spec:
         cat pipeline.env
         
         chmod +x $(params.script)
-        ./$(params.script) "properties.env"
+        ./$(params.script) "pipeline.env"
         
 ---
 apiVersion: tekton.dev/v1beta1

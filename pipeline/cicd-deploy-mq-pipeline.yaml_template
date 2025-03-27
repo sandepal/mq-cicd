@@ -126,7 +126,7 @@ spec:
         
         cd $(params.script_dir)
         chmod +x $(params.deploy_script)
-        ./$(params.deploy_script) "properties.env" "resources"
+        ./$(params.deploy_script) "pipeline.env" "resources"
         
         chmod +x $(params.checkifrunning_script)
         # Run both scripts in parallel
