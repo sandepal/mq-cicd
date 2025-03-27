@@ -10,12 +10,14 @@
 
 set -e
 
+env_file_path="${1:-pipeline.env}"
+
 # Load env variables
-if [ -f pipeline.env ]; then
+if [ -f "$env_file_path" ]; then
   echo "Loading environment variables from pipeline.env"  
-  source pipeline.env
+  source "$env_file_path"
 else
-  echo "pipeline.env not found!"
+  echo "$env_file_path not found!"
   exit 1
 fi
 
@@ -28,3 +30,5 @@ cat cicd-deploy-mq-pipeline.yaml_template |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" |  
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" > cicd-deploy-mq-pipeline$ci_namespace.yaml
+
+ls -la .

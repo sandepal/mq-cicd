@@ -66,7 +66,7 @@ spec:
         name: run-pipeline-script
       params:
         - name: script
-          value: "installmqPipeline.sh"
+          value: "deploymqPipeline.sh"
         - name: script_dir
           value: "/workspace/git-ws/srcrepos/pipeline"
         - name: git_source_url
@@ -135,7 +135,7 @@ spec:
         #!/bin/sh
         set -e
         set -x
-              
+        
         cd $(params.script_dir)
         ls -la .
         
@@ -154,10 +154,10 @@ spec:
         EOF
         
         echo "Generated env file:"
-        cat pipeline.env        
+        cat pipeline.env
         
         chmod +x $(params.script)
-        ./$(params.script)
+        ./$(params.script) "properties.env"
         
 ---
 apiVersion: tekton.dev/v1beta1

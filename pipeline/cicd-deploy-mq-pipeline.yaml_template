@@ -14,65 +14,82 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: build-push-deploy-pipeline
-  namespace: {{NAMESPACE}}
+  name: ci-deploy-mq-pipeline
+  namespace: {{CI_NAMESPACE}}
+  labels:
+    part: ci-definition
 spec:
   params:
-    - name: git-source-url
-      default: "{{SRCREPO}}"
-    - name: git-target-url
-      default: "{{TRGTREPO}}"
-    - name: git-revision
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
       default: "{{BRANCH}}"
-    - name: dockerfile-path
+    - name: dockerfile_path
       default: docker/oc-cli-git
-    - name: image-name
+    - name: image_name
       default: oc-cli-git
-    - name: image-tag
+    - name: image_tag
       default: latest
-    - name: image-namespace
-      default: {{NAMESPACE}}
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
   workspaces:
     - name: git-ws
   tasks:
-    - name: clone
+    - name: create-cert-{{QMGR_NAME_1}}
       taskRef:
-        name: clone-git-repo
+        name: create-mq-cert
       params:
-        - name: git-source-url
-          value: $(params.git-source-url)
-        - name: git-revision
-          value: $(params.git-revision)
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
+        - name: namespace
+          value: {{NAMESPACE}}
+        - name: cert_name
+          value: {{QMGR_NAME_1}}-cert
+        - name: secret_name
+          value: {{QMGR_NAME_1}}-cert-secret
+        - name: common_name
+          value: ibmwebspheremq{{QMGR_NAME_1}}
+    
+    - name: create-cert-{{QMGR_NAME_2}}
+      taskRef:
+        name: create-mq-cert
+      params:
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: cert_name
+          value: {{QMGR_NAME_2}}-cert
+        - name: secret_name
+          value: {{QMGR_NAME_2}}-cert-secret
+        - name: common_name
+          value: ibmwebspheremq{{QMGR_NAME_2}}
 
-    - name: oc-build
+    # Deploy IBM MQ
+    - name: deploy-mq
+      retries: 0
       runAfter:
-        - clone
+        - create-cert-{{QMGR_NAME_1}}
+        - create-cert-{{QMGR_NAME_2}}
       taskRef:
-        name: oc-build-push-image
+        name: execute-mq-deploy
       params:
-        - name: dockerfile-path
-          value: $(params.dockerfile-path)
-        - name: image-name
-          value: $(params.image-name)
-        - name: image-tag
-          value: $(params.image-tag)
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-
-    - name: run-built-image
-      runAfter:
-        - oc-build
-      taskRef:
-        name: use-built-image
-      params:
-        - name: image-name
-          value: $(params.image-name)
-        - name: image-tag
-          value: $(params.image-tag)
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: qmgr_name_1
+          value: {{QMGR_NAME_1}}
+        - name: qmgr_name_2
+          value: {{QMGR_NAME_2}}
+        - name: deploy_script
+          value: deployQM.sh
+        - name: checkifrunning_script
+          value: checkIfStarted.sh
+        - name: script_dir
+          value: "/workspace/git-ws/srcrepos/mq"
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -81,124 +98,150 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: clone-git-repo
-  namespace: {{NAMESPACE}}
+  name: execute-mq-deploy
+  namespace: {{CI_NAMESPACE}}
 spec:
   params:
-    - name: git-source-url
+    - name: ci_namespace
       type: string
-    - name: git-revision
+    - name: qmgr_name_1
       type: string
-      default: main
+    - name: qmgr_name_2
+      type: string
+    - name: deploy_script
+      type: string
+    - name: checkifrunning_script
+      type: string
+    - name: script_dir
+      type: string 
+    
   workspaces:
     - name: git-ws
   steps:
-    - name: git-clone
-      image: alpine/git
-      script: |
-        #!/bin/sh
-        set -e
-        set -x
-        cd /workspace/git-ws
-        git clone $(params.git-source-url) repo
-        cd repo
-        git checkout $(params.git-revision)
----
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: oc-build-push-image
-  namespace: {{NAMESPACE}}
-spec:
-  params:
-    - name: dockerfile-path
-      type: string
-    - name: image-name
-      type: string
-    - name: image-tag
-      type: string
-      default: latest
-  workspaces:
-    - name: git-ws
-  steps:
-    - name: oc-build
+    - name: apply-cert-resources
       image: quay.io/openshift/origin-cli:latest
       script: |
-        #!/bin/sh
+        #!/bin/bash
         set -e
-        set -x
         
-        echo "Enabling registry route..."
-        if ! oc get route default-route -n openshift-image-registry >/dev/null 2>&1; then
-          oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"defaultRoute":true}}'
-          sleep 10
-        fi
+        cd $(params.script_dir)
+        chmod +x $(params.deploy_script)
+        ./$(params.deploy_script) "properties.env" "resources"
         
-        registry=$(oc get route default-route -n openshift-image-registry -o jsonpath='{.spec.host}')
-        image="$registry/{{NAMESPACE}}/$(params.image-name):$(params.image-tag)"
+        chmod +x $(params.checkifrunning_script)
+        # Run both scripts in parallel
+        ./$(params.checkifrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_1)" &
+        PID1=$!
         
-        echo "Creating build..."
-        oc new-build --name=$(params.image-name) --binary --strategy=docker -n {{NAMESPACE}} || true
-        cd /workspace/git-ws/repo/$(params.dockerfile-path)
-        oc start-build $(params.image-name) --from-dir=. --follow -n {{NAMESPACE}}
+        ./$(params.checkifrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_2)"&
+        PID2=$!
         
-        echo "Waiting for image stream..."
-        for i in $(seq 1 20); do
-          oc get istag $(params.image-name):$(params.image-tag) -n {{NAMESPACE}} && break
-          echo "Waiting... ($i)"
-          sleep 5
-        done
+        # Wait for both to finish
+        wait $PID1
+        wait $PID2
+        
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: use-built-image
-  namespace: {{NAMESPACE}}
+  name: create-mq-cert
+  namespace: {{CI_NAMESPACE}}
 spec:
   params:
-    - name: image-name
+    - name: ci_namespace
       type: string
-    - name: image-tag
+      default: default
+    - name: cert_name
       type: string
-      default: latest
-  workspaces:
-    - name: git-ws
+      default: mq-cert
+    - name: secret_name
+      type: string
+      default: mq-key-store
+    - name: common_name
+      type: string
+      default: mq.ibm.com
   steps:
-    - name: run-step
-      image: image-registry.openshift-image-registry.svc:5000/{{NAMESPACE}}/$(params.image-name):$(params.image-tag)
+    - name: apply-cert-resources
+      image: quay.io/openshift/origin-cli:latest
       script: |
-        #!/bin/sh
+        #!/bin/bash
         set -e
-        set -x
-        echo "Running from image: $(params.image-name):$(params.image-tag)"
-        ls -la /workspace/git-ws/repo
 
+        cat <<EOF | oc apply -f -
+        apiVersion: cert-manager.io/v1
+        kind: Issuer
+        metadata:
+          name: selfsigning-issuer
+          namespace: $(params.ci_namespace)
+        spec:
+          selfSigned: {}
+        ---
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: $(params.cert_name)
+          namespace: $(params.ci_namespace)
+        spec:
+          secretName: $(params.secret_name)
+          duration: 8760h
+          renewBefore: 360h
+          commonName: $(params.common_name)
+          issuerRef:
+            name: selfsigning-issuer
+            kind: Issuer
+          isCA: false
+          usages:
+            - server auth
+            - client auth
+        EOF
+    - name: wait-for-secret
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+
+        echo "Waiting for secret '$(params.secret_name)' to be created..."
+        for i in {1..30}; do
+          oc get secret $(params.secret_name) -n $(params.ci_namespace) && exit 0
+          sleep 5
+        done
+
+        echo "Timed out waiting for secret."
+        exit 1
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: build-push-deploy-pipelinerun
-  namespace: {{NAMESPACE}}
+  name: ci-deploy-mq-pipelinerun
+  namespace: {{CI_NAMESPACE}}
+  labels:
+    part: ci-run
 spec:
   pipelineRef:
-    name: build-push-deploy-pipeline
+    name: ci-deploy-mq-pipeline
   serviceAccountName: pipeline-admin
   workspaces:
     - name: git-ws
       persistentvolumeclaim:
-        claimName: git-source-workspace2
+        claimName: git-source-workspace
   params:
-    - name: git-source-url
-      value: "{{SRCREPO}}"
-    - name: git-target-url
-      value: "{{TRGTREPO}}"
-    - name: git-revision
+    - name: git_source_url
+      value: "{{SRCREPOS}}"
+    - name: git_target_url
+      value: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      value: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      value: "{{CD_NAMESPACE}}"
+    - name: branch
       value: "{{BRANCH}}"
-    - name: dockerfile-path
+    - name: dockerfile_path
       value: docker/oc-cli-git
-    - name: image-name
+    - name: image_name
       value: oc-cli-git
-    - name: image-tag
+    - name: image_tag
       value: latest
-    - name: image-namespace
-      value: {{NAMESPACE}}
+    - name: qmgr_name_1
+      value: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      value: {{QMGR_NAME_2}}  
