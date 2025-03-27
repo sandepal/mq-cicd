@@ -48,7 +48,7 @@ spec:
         - name: secret_name
           value: {{QMGR_NAME_1}}-cert-secret
         - name: work_dir
-          value: "/workspace/git-ws/srcrepos"
+          value: "/workspace/git-ws/srcrepos/mq/resources"
       workspaces:
         - name: git-ws
           workspace: git-ws
