@@ -41,14 +41,14 @@ spec:
     - name: qmgr_name_2
       default: {{QMGR_NAME_2}}    
   workspaces:
-    - name: git-ws
-  podTemplate:
-    ttlSecondsAfterFinished: 3600  # keep pods for 1 hour after run
+    - name: git-ws  
   tasks:
     - name: clone-git
       retries: 0
       taskRef:
         name: clone-git-task
+      podTemplate:
+        ttlSecondsAfterFinished: 3600  # keep pods for 1 hour after run
       params:
         - name: git-source-url
           value: $(params.git-source-url)
