@@ -158,7 +158,7 @@ spec:
         git config user.name "tekton-bot"
         git config user.email "tekton@ci"
         git status
-        
+        git add yaml/*.yaml
         git commit -m "Add queuemanager yaml files via Tekton"
         git push origin $(params.branch)      
         
