@@ -31,4 +31,4 @@ cat cicd-deploy-mq-pipeline.yaml_template |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" |  
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" > cicd-deploy-mq-pipeline$ci_namespace.yaml
 
-ls -la .
+oc apply -f cicd-deploy-mq-pipeline$ci_namespace.yaml
