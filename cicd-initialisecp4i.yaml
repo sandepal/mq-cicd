@@ -16,6 +16,8 @@ kind: Pipeline
 metadata:
   name: ci-init-pipeline
   namespace: cp4i
+  labels:
+    part: ci-definition
 spec:
   params:
     - name: git-source-url
@@ -94,6 +96,8 @@ kind: Task
 metadata:
   name: run-pipeline-script
   namespace: cp4i
+  labels:
+    part: ci-definition
 spec:
   params:
     - name: script
@@ -160,6 +164,8 @@ kind: Task
 metadata:
   name: clone-git-task
   namespace: cp4i
+  labels:
+    part: ci-definition
 spec:
   params:
     - name: git-source-url
@@ -189,6 +195,8 @@ kind: PipelineRun
 metadata:
   name: ci-init-pipelinerun
   namespace: cp4i
+  labels:
+    part: ci-run
 spec:
   pipelineRef:
     name: ci-init-pipeline
