@@ -20,21 +20,21 @@ metadata:
     part: ci-definition
 spec:
   params:
-    - name: git-source-url
+    - name: git_source_url
       default: "{{SRCREPOS}}"
-    - name: git-target-url
+    - name: git_target_url
       default: "{{TRGTREPOS}}"
-    - name: ci-namespace
+    - name: ci_namespace
       default: "{{CI_NAMESPACE}}"
-    - name: cd-namespace
+    - name: cd_namespace
       default: "{{CD_NAMESPACE}}"
     - name: branch
       default: "{{BRANCH}}"
-    - name: dockerfile-path
+    - name: dockerfile_path
       default: docker/oc-cli-git
-    - name: image-name
+    - name: image_name
       default: oc-cli-git
-    - name: image-tag
+    - name: image_tag
       default: latest
     - name: qmgr_name_1
       default: {{QMGR_NAME_1}}
@@ -48,9 +48,9 @@ spec:
       taskRef:
         name: clone-git-task
       params:
-        - name: git-source-url
-          value: $(params.git-source-url)
-        - name: git-target-url
+        - name: git_source_url
+          value: $(params.git_source_url)
+        - name: git_target_url
           value: "{{TRGTREPOS}}"  
         - name: branch
           value: "$(params.branch)"
@@ -67,24 +67,24 @@ spec:
       params:
         - name: script
           value: "installmqPipeline.sh"
-        - name: script-dir
+        - name: script_dir
           value: "/workspace/git-ws/srcrepos/pipeline"
-        - name: git-source-url
-          value: $(params.git-source-url)
-        - name: git-target-url
-          value: $(params.git-source-url)
-        - name: ci-namespace
-          value: $(params.ci-namespace)
-        - name: cd-namespace
-          value: $(params.cd-namespace)
+        - name: git_source_url
+          value: $(params.git_source_url)
+        - name: git_target_url
+          value: $(params.git_target_url)
+        - name: ci_namespace
+          value: $(params.ci_namespace)
+        - name: cd_namespace
+          value: $(params.cd_namespace)
         - name: branch
           value: $(params.branch)
-        - name: dockerfile-path
-          value: $(params.dockerfile-path)
-        - name: image-name
-          value: $(params.image-name)
-        - name: image-tag
-          value: $(params.image-tag)
+        - name: dockerfile_path
+          value: $(params.dockerfile_path)
+        - name: image_name
+          value: $(params.image_name)
+        - name: image_tag
+          value: $(params.image_tag)
         - name: qmgr_name_1
           value: $(params.qmgr_name_1)
         - name: qmgr_name_2
@@ -104,23 +104,23 @@ spec:
   params:
     - name: script
       type: string
-    - name: script-dir
+    - name: script_dir
       type: string
-    - name: git-source-url
+    - name: git_source_url
       type: string
-    - name: git-target-url
+    - name: git_target_url
       type: string
-    - name: ci-namespace
+    - name: ci_namespace
       type: string
-    - name: cd-namespace
+    - name: cd_namespace
       type: string
     - name: branch
       type: string
-    - name: dockerfile-path
+    - name: dockerfile_path
       type: string
-    - name: image-name
+    - name: image_name
       type: string
-    - name: image-tag
+    - name: image_tag
       type: string
     - name: qmgr_name_1
       type: string
@@ -136,21 +136,21 @@ spec:
         set -e
         set -x
               
-        cd $(params.script-dir)
+        cd $(params.script_dir)
         ls -la .
         
         # Generate .env file with pipeline parameters
         cat <<EOF > pipeline.env
-        GIT_SOURCE_URL="$(params.git-source-url)"
-        GIT_TARGET_URL="$(params.git-target-url)"
-        CI_NAMESPACE="$(params.ci-namespace)"
-        CD_NAMESPACE="$(params.cd-namespace)"
-        BRANCH="$(params.branch)"
-        DOCKERFILE_PATH="$(params.dockerfile-path)"
-        IMAGE_NAME="$(params.image-name)"
-        IMAGE_TAG="$(params.image-tag)"
-        QMGR_NAME_1="$(params.qmgr_name_1)"
-        QMGR_NAME_2="$(params.qmgr_name_2)"
+        git_source_url="$(params.git_source_url)"
+        git_target_url="$(params.git_target_url)"
+        ci_namespace="$(params.ci_namespace)"
+        cd_namespace="$(params.cd_namespace)"
+        branch="$(params.branch)"
+        dockerfile_path="$(params.dockerfile_path)"
+        image_name="$(params.image_name)"
+        image_tag="$(params.image_tag)"
+        qmgr_name_1="$(params.qmgr_name_1)"
+        qmgr_name_2="$(params.qmgr_name_2)"
         EOF
         
         echo "Generated env file:"
@@ -169,9 +169,9 @@ metadata:
     part: ci-definition
 spec:
   params:
-    - name: git-source-url
+    - name: git_source_url
       type: string
-    - name: git-target-url
+    - name: git_target_url
       type: string
     - name: branch
       type: string
@@ -186,9 +186,9 @@ spec:
         set -e
         set -x
         cd /workspace/git-ws
-        git clone $(params.git-source-url) srcrepos        
+        git clone $(params.git_source_url) srcrepos        
         ls -la srcrepos
-        git clone $(params.git-target-url) trgtrepos
+        git clone $(params.git_target_url) trgtrepos
         ls -la trgtrepos
 ---
 apiVersion: tekton.dev/v1beta1
@@ -207,21 +207,21 @@ spec:
       persistentvolumeclaim:
         claimName: git-source-workspace
   params:
-    - name: git-source-url
+    - name: git_source_url
       value: "{{SRCREPOS}}"
-    - name: git-target-url
+    - name: git_target_url
       value: "{{TRGTREPOS}}"
-    - name: ci-namespace
+    - name: ci_namespace
       value: "{{CI_NAMESPACE}}"
-    - name: cd-namespace
+    - name: cd_namespace
       value: "{{CD_NAMESPACE}}"
     - name: branch
       value: "{{BRANCH}}"
-    - name: dockerfile-path
+    - name: dockerfile_path
       value: docker/oc-cli-git
-    - name: image-name
+    - name: image_name
       value: oc-cli-git
-    - name: image-tag
+    - name: image_tag
       value: latest
     - name: qmgr_name_1
       value: {{QMGR_NAME_1}}

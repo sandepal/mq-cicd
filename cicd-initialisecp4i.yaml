@@ -66,7 +66,9 @@ spec:
         name: run-pipeline-script
       params:
         - name: script
-          value: "pipeline/installmqPipeline.sh"
+          value: "installmqPipeline.sh"
+        - name: script-dir
+          value: "/workspace/git-ws/srcrepos/pipeline"
         - name: git-source-url
           value: $(params.git-source-url)
         - name: git-target-url
@@ -86,7 +88,7 @@ spec:
         - name: qmgr_name_1
           value: $(params.qmgr_name_1)
         - name: qmgr_name_2
-          value: $(params.qmgr_name_2) 
+          value: $(params.qmgr_name_2)               
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -101,6 +103,8 @@ metadata:
 spec:
   params:
     - name: script
+      type: string
+    - name: script-dir
       type: string
     - name: git-source-url
       type: string
@@ -131,10 +135,8 @@ spec:
         #!/bin/sh
         set -e
         set -x
-        cd /workspace/git-ws
-        ls -la srcrepos
-        ls -la trgtrepos        
-        cd srcrepos/pipeline
+              
+        cd $(params.script-dir)
         ls -la .
         
         # Generate .env file with pipeline parameters
@@ -152,11 +154,10 @@ spec:
         EOF
         
         echo "Generated env file:"
-        cat pipeline.env
-        
+        cat pipeline.env        
         
         chmod +x $(params.script)
-        #./$(params.script)
+        ./$(params.script)
         
 ---
 apiVersion: tekton.dev/v1beta1

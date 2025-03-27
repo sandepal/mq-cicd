@@ -20,7 +20,7 @@ file_storage="ocs-storagecluster-cephfs"
 block_storage="ocs-storagecluster-ceph-rbd"
 
 # Create the target namespace if it doesn't exist
-oc get ns $cd_namespace >/dev/null 2>&1 || oc new-project $cd_namespace
+oc get ns $cd-namespace >/dev/null 2>&1 || oc new-project $cd_namespace
 oc get ns $ci_namespace >/dev/null 2>&1 || oc new-project $ci_namespace
 oc project $ci_namespace
 
@@ -108,6 +108,6 @@ oc apply -f cicd-initialise$ci_namespace.yaml \
   --prune -l part=ci-run \
   --prune-allowlist=tekton.dev/v1beta1/PipelineRun
 
-#rm cicd-initialise$ci_namespace.yaml
+rm cicd-initialise$ci_namespace.yaml
 
 
