@@ -39,6 +39,12 @@ cat cicd-package-mq.yaml_template |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-package-mq$ci_namespace.yaml
 
+echo "---------------------------------"
+cat cicd-package-mq-pipelinerun$ci_namespace.yaml
+echo "---------------------------------"
+cat cicd-package-mq$ci_namespace.yaml
+echo "---------------------------------"
+
 oc apply -f cicd-package-mq$ci_namespace.yaml
 oc apply -f cicd-package-mq-pipelinerun$ci_namespace.yaml
 
