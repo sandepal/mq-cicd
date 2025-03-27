@@ -10,17 +10,10 @@
 
 set -e
 
-env_file_path="${1:-../pipeline/pipeline.env}"
-mq_yaml_dir="${2:-resources}"
-
-# Load env variables
-if [ -f "$env_file_path" ]; then
-  echo "Loading environment variables from pipeline.env"  
-  source "$env_file_path"
-else
-  echo "$env_file_path not found!"
-  exit 1
-fi
+ci_namespace="$1"
+qmgr_name_1="$2"
+qmgr_name_2="$3"
+mq_yaml_dir="$4"
 
 cd $mq_yaml_dir
 

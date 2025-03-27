@@ -86,7 +86,7 @@ spec:
           value: {{QMGR_NAME_2}}
         - name: deploy_script
           value: deployQM.sh
-        - name: checkifrunning_script
+        - name: checkforrunning_script
           value: checkIfStarted.sh
         - name: script_dir
           value: "/workspace/git-ws/srcrepos/mq"
@@ -110,7 +110,7 @@ spec:
       type: string
     - name: deploy_script
       type: string
-    - name: checkifrunning_script
+    - name: checkforrunning_script
       type: string
     - name: script_dir
       type: string 
@@ -126,14 +126,14 @@ spec:
         
         cd $(params.script_dir)
         chmod +x $(params.deploy_script)
-        ./$(params.deploy_script) "pipeline.env" "resources"
+        ./$(params.deploy_script) "$(params.ci_namespace)" "$(params.qmgr_name_1)" "$(params.qmgr_name_2)" "resources"
         
-        chmod +x $(params.checkifrunning_script)
+        chmod +x $(params.checkforrunning_script)
         # Run both scripts in parallel
-        ./$(params.checkifrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_1)" &
+        ./$(params.checkforrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_1)" &
         PID1=$!
         
-        ./$(params.checkifrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_2)"&
+        ./$(params.checkforrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_2)"&
         PID2=$!
         
         # Wait for both to finish
