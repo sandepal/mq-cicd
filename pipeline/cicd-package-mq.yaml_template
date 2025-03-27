@@ -92,9 +92,7 @@ spec:
           value: "/workspace/git-ws/srcrepos/mq/resources"
       workspaces:
         - name: git-ws
-          workspace: git-ws
-        - name: git-ssh
-          workspace: git-ssh
+          workspace: git-ws        
           
     - name: upload-yamls
       runAfter:
@@ -113,6 +111,8 @@ spec:
       workspaces:
         - name: git-ws
           workspace: git-ws
+        - name: git-ssh
+          workspace: git-ssh
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
