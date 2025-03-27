@@ -97,17 +97,19 @@ cat pipeline/cicd-initialise.yaml_template |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-initialise$ci_namespace.yaml
 
-# Step 1: Create pipeline + tasks
-oc apply -f cicd-initialise$ci_namespace.yaml \
-  --prune -l part=ci-definition \
-  --prune-allowlist=tekton.dev/v1beta1/Task \
-  --prune-allowlist=tekton.dev/v1beta1/Pipeline
+cat pipeline/cicd-initialise-pipelinerun.yaml_template |
+       sed "s#{{SRCREPOS}}#$srcrepos#g;" |
+       sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
+       sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
+	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
+       sed "s#{{BRANCH}}#$branch#g;" |
+       sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-initialise-pipelinerun$ci_namespace.yaml
+	   
 
-# Step 2: Then create the PipelineRun
-oc apply -f cicd-initialise$ci_namespace.yaml \
-  --prune -l part=ci-run \
-  --prune-allowlist=tekton.dev/v1beta1/PipelineRun
+oc apply -f cicd-initialise$ci_namespace.yaml
+oc apply -f cicd-initialise-pipelinerun$ci_namespace.yaml
 
 rm cicd-initialise$ci_namespace.yaml
-
+rm cicd-initialise-pipelinerun$ci_namespace.yaml
 

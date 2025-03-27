@@ -16,8 +16,6 @@ kind: Pipeline
 metadata:
   name: ci-deploy-mq-pipeline
   namespace: {{CI_NAMESPACE}}
-  labels:
-    part: ci-definition
 spec:
   params:
     - name: git_source_url
@@ -100,8 +98,6 @@ kind: Task
 metadata:
   name: execute-mq-deploy
   namespace: {{CI_NAMESPACE}}
-  labels:
-    part: ci-definition
 spec:
   params:
     - name: ci_namespace
@@ -148,8 +144,6 @@ kind: Task
 metadata:
   name: create-mq-cert
   namespace: {{CI_NAMESPACE}}
-  labels:
-    part: ci-definition
 spec:
   params:
     - name: ci_namespace
@@ -212,40 +206,3 @@ spec:
 
         echo "Timed out waiting for secret."
         exit 1
----
-apiVersion: tekton.dev/v1beta1
-kind: PipelineRun
-metadata:
-  name: ci-deploy-mq-pipelinerun
-  namespace: {{CI_NAMESPACE}}
-  labels:
-    part: ci-run
-spec:
-  pipelineRef:
-    name: ci-deploy-mq-pipeline
-  serviceAccountName: pipeline-admin
-  workspaces:
-    - name: git-ws
-      persistentvolumeclaim:
-        claimName: git-source-workspace
-  params:
-    - name: git_source_url
-      value: "{{SRCREPOS}}"
-    - name: git_target_url
-      value: "{{TRGTREPOS}}"
-    - name: ci_namespace
-      value: "{{CI_NAMESPACE}}"
-    - name: cd_namespace
-      value: "{{CD_NAMESPACE}}"
-    - name: branch
-      value: "{{BRANCH}}"
-    - name: dockerfile_path
-      value: docker/oc-cli-git
-    - name: image_name
-      value: oc-cli-git
-    - name: image_tag
-      value: latest
-    - name: qmgr_name_1
-      value: {{QMGR_NAME_1}}
-    - name: qmgr_name_2
-      value: {{QMGR_NAME_2}}  
