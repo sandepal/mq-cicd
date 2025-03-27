@@ -14,7 +14,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: ci-parent-pipeline
+  name: ci-init-pipeline
   namespace: {{CI_NAMESPACE}}
 spec:
   params:
@@ -41,93 +41,122 @@ spec:
   workspaces:
     - name: git-ws
   tasks:
-    - name: buildimage-push-task
-      retries: 0
-      taskRef:
-        name: trigger-pipeline-build-image-task
-      params:
-        - name: git-source-url
-          value: $(params.git-source-url)
-        - name: branch
-          value: "$(params.branch)"
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
----
-apiVersion: tekton.dev/v1beta1
-kind: Pipeline
-metadata:
-  name: build-image-pipeline
-  namespace: {{CI_NAMESPACE}}
-spec:
-  params:
-    - name: git-source-url
-      default: "{{SRCREPOS}}"
-    - name: ci-namespace
-      default: "{{CI_NAMESPACE}}"
-    - name: branch
-      default: "{{BRANCH}}"
-    - name: dockerfile-path
-      default: docker/oc-cli-git
-    - name: image-name
-      default: oc-cli-git
-    - name: image-tag
-      default: latest    
-  workspaces:
-    - name: git-ws
-  tasks:
     - name: clone-git
+      retries: 0
       taskRef:
         name: clone-git-task
       params:
         - name: git-source-url
           value: $(params.git-source-url)
+        - name: git-target-url
+          value: "{{TRGTREPOS}}"  
         - name: branch
-          value: $(params.branch)
+          value: "$(params.branch)"
       workspaces:
         - name: git-ws
           workspace: git-ws
-
+          
+      - name: deploy-pipelines
+        retries: 0
+        runAfter:
+          - clone-git
+        taskRef:
+          name: run-pipeline-script
+        params:
+          - name: script
+            value: "pipeline/installmqPipeline.sh"
+          - name: git-source-url
+            value: $(params.git-source-url)
+          - name: git-target-url
+            value: $(params.git-source-url)
+          - name: ci-namespace
+            value: $(params.ci-namespace)
+          - name: cd-namespace
+            value: $(params.cd-namespace)
+          - name: branch
+            value: $(params.branch)
+          - name: dockerfile-path
+            value: $(params.dockerfile-path)
+          - name: image-name
+            value: $(params.image-name)
+          - name: image-tag
+            value: $(params.image-tag)
+          - name: qmgr_name_1
+            value: $(params.qmgr_name_1)
+          - name: qmgr_name_2
+            value: $(params.qmgr_name_2) 
+        workspaces:
+          - name: git-source
+            workspace: git-source
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: trigger-pipeline-build-image-task
+  name: run-pipeline-script
+  namespace: {{CI_NAMESPACE}}
 spec:
+  params:
+    - name: script
+      type: string
+    - name: git-source-url
+      type: string
+    - name: git-target-url
+      type: string
+    - name: ci-namespace
+      type: string
+    - name: cd-namespace
+      type: string
+    - name: branch
+      type: string
+    - name: dockerfile-path
+      type: string
+    - name: image-name
+      type: string
+    - name: image-tag
+      type: string
+    - name: qmgr_name_1
+      type: string
+    - name: qmgr_name_2
+      type: string
+  workspaces:
+    - name: git-ws
   steps:
-    - name: run
+    - name: run-script
       image: quay.io/openshift/origin-cli:latest
       script: |
         #!/bin/sh
-        cat <<EOF > /tmp/pipeline-build-image-run.yaml
-        apiVersion: tekton.dev/v1beta1
-        kind: PipelineRun
-        metadata:
-          name: build-image-run-pipelinerun
-          namespace: {{CI_NAMESPACE}}
-        spec:
-          pipelineRef:
-            name: build-image-pipeline
-          serviceAccountName: pipeline-admin
-          workspaces:
-            - name: git-ws
-              persistentvolumeclaim:
-                claimName: git-source-workspace
-          params:
-            - name: git-source-url
-              value: "{{SRCREPOS}}"
-            - name: ci-namespace
-              value: "{{CI_NAMESPACE}}"
-            - name: branch
-              value: "{{BRANCH}}"
-            - name: dockerfile-path
-              value: docker/oc-cli-git
-            - name: image-name
-              value: oc-cli-git
-            - name: image-tag
-              value: latest
+        set -e
+        set -x
+        cd /workspace/git-ws
+        ls -la srcrepos
+        ls -la trgtrepos        
+        cd srcrepos/pipeline
+        ls -la .
+        
+        # Generate .env file with pipeline parameters
+        cat <<EOF > pipeline.env
+        GIT_SOURCE_URL="$(params.git-source-url)"
+        GIT_TARGET_URL="$(params.git-target-url)"
+        CI_NAMESPACE="$(params.ci-namespace)"
+        CD_NAMESPACE="$(params.cd-namespace)"
+        BRANCH="$(params.branch)"
+        DOCKERFILE_PATH="$(params.dockerfile-path)"
+        IMAGE_NAME="$(params.image-name)"
+        IMAGE_TAG="$(params.image-tag)"
+        QMGR_NAME_1="$(params.qmgr_name_1)"
+        QMGR_NAME_2="$(params.qmgr_name_2)"
         EOF
-        oc apply -f /tmp/pipeline-build-image-run.yaml
+        
+        echo "Generated env file:"
+        cat pipeline.env
+        
+        
+        chmod +x $(params.script)
+        #./$(params.script)
+        
+        
+        
+        
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -138,9 +167,11 @@ spec:
   params:
     - name: git-source-url
       type: string
+    - name: git-target-url
+      type: string
     - name: branch
       type: string
-      default: main
+      default: main      
   workspaces:
     - name: git-ws
   steps:
@@ -151,17 +182,19 @@ spec:
         set -e
         set -x
         cd /workspace/git-ws
-        git clone $(params.git-source-url) repo        
-        ls -la repo
+        git clone $(params.git-source-url) srcrepos        
+        ls -la srcrepos
+        git clone $(params.git-target-url) trgtrepos
+        ls -la trgtrepos
 ---
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: ci-parent-pipelinerun
+  name: ci-init-pipelinerun
   namespace: {{CI_NAMESPACE}}
 spec:
   pipelineRef:
-    name: ci-parent-pipeline
+    name: ci-init-pipeline
   serviceAccountName: pipeline-admin
   workspaces:
     - name: git-ws

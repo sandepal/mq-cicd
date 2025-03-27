@@ -1,0 +1,190 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ci-parent-pipeline
+  namespace: cp4i
+spec:
+  params:
+    - name: git-source-url
+      default: "https://github.com/sandepal/mq-cicd.git"
+    - name: git-target-url
+      default: "https://github.com/sandepal/mq-argocd.git"
+    - name: ci-namespace
+      default: "cp4i"
+    - name: cd-namespace
+      default: "ucqm-demo"
+    - name: branch
+      default: "main"
+    - name: dockerfile-path
+      default: docker/oc-cli-git
+    - name: image-name
+      default: oc-cli-git
+    - name: image-tag
+      default: latest
+    - name: qmgr_name_1
+      default: ucqm1
+    - name: qmgr_name_2
+      default: ucqm2    
+  workspaces:
+    - name: git-ws
+  tasks:
+    - name: buildimage-push-task
+      retries: 0
+      taskRef:
+        name: trigger-pipeline-build-image-task
+      params:
+        - name: git-source-url
+          value: $(params.git-source-url)
+        - name: branch
+          value: "$(params.branch)"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-image-pipeline
+  namespace: cp4i
+spec:
+  params:
+    - name: git-source-url
+      default: "https://github.com/sandepal/mq-cicd.git"
+    - name: ci-namespace
+      default: "cp4i"
+    - name: branch
+      default: "main"
+    - name: dockerfile-path
+      default: docker/oc-cli-git
+    - name: image-name
+      default: oc-cli-git
+    - name: image-tag
+      default: latest    
+  workspaces:
+    - name: git-ws
+  tasks:
+    - name: clone-git
+      taskRef:
+        name: clone-git-task
+      params:
+        - name: git-source-url
+          value: $(params.git-source-url)
+        - name: branch
+          value: $(params.branch)
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: trigger-pipeline-build-image-task
+spec:
+  steps:
+    - name: run
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        cat <<EOF > /tmp/pipeline-build-image-run.yaml
+        apiVersion: tekton.dev/v1beta1
+        kind: PipelineRun
+        metadata:
+          name: build-image-run-pipelinerun
+          namespace: cp4i
+        spec:
+          pipelineRef:
+            name: build-image-pipeline
+          serviceAccountName: pipeline-admin
+          workspaces:
+            - name: git-ws
+              persistentvolumeclaim:
+                claimName: git-source-workspace
+          params:
+            - name: git-source-url
+              value: "https://github.com/sandepal/mq-cicd.git"
+            - name: ci-namespace
+              value: "cp4i"
+            - name: branch
+              value: "main"
+            - name: dockerfile-path
+              value: docker/oc-cli-git
+            - name: image-name
+              value: oc-cli-git
+            - name: image-tag
+              value: latest
+        EOF
+        oc apply -f /tmp/pipeline-build-image-run.yaml
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clone-git-task
+  namespace: cp4i
+spec:
+  params:
+    - name: git-source-url
+      type: string
+    - name: branch
+      type: string
+      default: main
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: git-clone
+      image: alpine/git
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        cd /workspace/git-ws
+        git clone $(params.git-source-url) repo        
+        ls -la repo
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: ci-parent-pipelinerun
+  namespace: cp4i
+spec:
+  pipelineRef:
+    name: ci-parent-pipeline
+  serviceAccountName: pipeline-admin
+  workspaces:
+    - name: git-ws
+      persistentvolumeclaim:
+        claimName: git-source-workspace
+  params:
+    - name: git-source-url
+      value: "https://github.com/sandepal/mq-cicd.git"
+    - name: git-target-url
+      value: "https://github.com/sandepal/mq-argocd.git"
+    - name: ci-namespace
+      value: "cp4i"
+    - name: cd-namespace
+      value: "ucqm-demo"
+    - name: branch
+      value: "main"
+    - name: dockerfile-path
+      value: docker/oc-cli-git
+    - name: image-name
+      value: oc-cli-git
+    - name: image-tag
+      value: latest
+    - name: qmgr_name_1
+      value: ucqm1
+    - name: qmgr_name_2
+      value: ucqm2  

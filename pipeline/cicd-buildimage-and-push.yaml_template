@@ -172,7 +172,6 @@ spec:
         set -x
         echo "Running from image: $(params.image-name):$(params.image-tag)"
         ls -la /workspace/git-ws/repo
-        
 
 ---
 apiVersion: tekton.dev/v1beta1
