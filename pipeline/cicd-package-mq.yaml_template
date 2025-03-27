@@ -54,6 +54,8 @@ spec:
           workspace: git-ws
           
     - name: create-yaml-secret-{{QMGR_NAME_2}}
+      runAfter:
+        - create-yaml-secret-{{QMGR_NAME_1}}
       taskRef:
         name: create-yaml-secret
       params:
@@ -72,6 +74,8 @@ spec:
           workspace: git-ws
           
     - name: create-qm-and-cm-yaml
+      runAfter:
+        - create-yaml-secret-{{QMGR_NAME_2}}
       taskRef:
         name: create-qm-and-cm-yaml
       params:
@@ -91,8 +95,6 @@ spec:
           
     - name: upload-yamls
       runAfter:
-        - create-yaml-secret-{{QMGR_NAME_1}}
-        - create-yaml-secret-{{QMGR_NAME_2}}
         - create-qm-and-cm-yaml
       taskRef:
         name: push-to-git
