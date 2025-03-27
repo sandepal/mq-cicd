@@ -86,7 +86,7 @@ cat pipeline/cicd-storage.yaml_template |
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" > cicd-storage$ci_namespace.yaml
 
 oc apply -f cicd-storage$ci_namespace.yaml
-#rm cicd-storage$ci_namespace.yaml
+rm cicd-storage$ci_namespace.yaml
 
 cat pipeline/cicd-initialise.yaml_template |
        sed "s#{{SRCREPOS}}#$srcrepos#g;" |
@@ -97,6 +97,6 @@ cat pipeline/cicd-initialise.yaml_template |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-initialise$ci_namespace.yaml
 oc apply -f cicd-initialise$ci_namespace.yaml
-#rm cicd-initialise$ci_namespace.yaml
+rm cicd-initialise$ci_namespace.yaml
 
 
