@@ -34,6 +34,7 @@ spec:
       default: {{QMGR_NAME_2}}    
   workspaces:
     - name: git-ws
+    - name: git-ssh
   tasks:
     - name: create-yaml-secret-{{QMGR_NAME_1}}
       taskRef:
@@ -92,6 +93,8 @@ spec:
       workspaces:
         - name: git-ws
           workspace: git-ws
+        - name: git-ssh
+          workspace: git-ssh
           
     - name: upload-yamls
       runAfter:
@@ -101,13 +104,15 @@ spec:
       params:
         - name: git_target_url
           value: {{TRGTREPOS}}
+        - name: branch
+          value: "{{BRANCH}}"
         - name: source_dir
           value: "/workspace/git-ws/srcrepos/mq/yaml"
         - name: target_dir
           value: "/workspace/git-ws/trgtrepos"
       workspaces:
         - name: git-ws
-          workspace: git-ws      
+          workspace: git-ws
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -124,6 +129,7 @@ spec:
       type: string
   workspaces:
     - name: git-ws
+    - name: git-ssh
   steps:
     - name: git-push
       image: alpine/git
@@ -135,6 +141,29 @@ spec:
         ls -la $(params.source_dir)
         echo "target dir"
         ls -la $(params.target_dir)
+        
+        mkdir -p ~/.ssh
+        
+        cp /workspace/ssh-directory/ssh-privatekey ~/.ssh/id_rsa
+        cp /workspace/ssh-directory/known_hosts ~/.ssh/known_hosts
+        chmod 600 ~/.ssh/id_rsa
+        chmod 644 ~/.ssh/known_hosts
+        
+        mkdir -p $(params.target_dir)/yaml
+        cp -f $(params.source_dir)/*.yaml $(params.target_dir)/yaml/
+        cd $(params.target_dir)
+        
+        echo "Switching git remote to SSH"        
+        SSH_URL=$(echo "$(params.git_target_url)" | sed -E 's|https://([^/]+)/([^/]+)/(.+)\.git|git@\1:\2/\3.git|')
+        
+        git remote set-url origin "$SSH_URL"
+        git config user.name "tekton-bot"
+        git config user.email "tekton@ci"
+        git status
+        
+        git commit -m "Add queuemanager yaml files via Tekton"
+        git push origin $(params.branch)      
+        
 
 ---
 apiVersion: tekton.dev/v1beta1
