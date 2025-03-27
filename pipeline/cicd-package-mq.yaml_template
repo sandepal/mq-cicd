@@ -90,6 +90,10 @@ spec:
           workspace: git-ws
           
     - name: upload-yamls
+      runAfter:
+        - create-yaml-secret-{{QMGR_NAME_1}}
+        - create-yaml-secret-{{QMGR_NAME_2}}
+        - create-qm-and-cm-yaml
       taskRef:
         name: push-to-git
       params:
@@ -211,7 +215,7 @@ spec:
         ls -la .
         mkdir -p ../yaml
         
-        oc get secret $(params.secret_name) -n $(params.cd_namespace) -o yaml > runtime-secret-$(params.qmgr_name).yaml
+        oc get secret $(params.secret_name) -n $(params.ci_namespace) -o yaml > runtime-secret-$(params.qmgr_name).yaml
         
         cat secret-QM.yaml_template |
           sed "s#{{SECRET_NAME}}#$secret_name#g;" |
