@@ -14,7 +14,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: ci-deploy-mq-pipeline
+  name: ci-package-mq-pipeline
   namespace: {{CI_NAMESPACE}}
 spec:
   params:
@@ -35,139 +35,197 @@ spec:
   workspaces:
     - name: git-ws
   tasks:
-    - name: create-cert-{{QMGR_NAME_1}}
+    - name: create-yaml-secret-{{QMGR_NAME_1}}
       taskRef:
-        name: create-mq-cert
-      params:
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: cert_name
-          value: {{QMGR_NAME_1}}-cert
-        - name: secret_name
-          value: {{QMGR_NAME_1}}-cert-secret
-        - name: common_name
-          value: ibmwebspheremq{{QMGR_NAME_1}}
-    
-    - name: create-cert-{{QMGR_NAME_2}}
-      taskRef:
-        name: create-mq-cert
-      params:
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: cert_name
-          value: {{QMGR_NAME_2}}-cert
-        - name: secret_name
-          value: {{QMGR_NAME_2}}-cert-secret
-        - name: common_name
-          value: ibmwebspheremq{{QMGR_NAME_2}}
-
-    # Deploy IBM MQ
-    - name: deploy-mq
-      retries: 0
-      runAfter:
-        - create-cert-{{QMGR_NAME_1}}
-        - create-cert-{{QMGR_NAME_2}}
-      taskRef:
-        name: execute-mq-deploy
+        name: create-yaml-secret
       params:
         - name: ci_namespace
           value: {{CI_NAMESPACE}}
+        - name: cd_namespace
+          value: {{CD_NAMESPACE}}
+        - name: qmgr_name
+          value: {{QMGR_NAME_1}}
+        - name: secret_name
+          value: {{QMGR_NAME_1}}-cert-secret
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+    - name: create-yaml-secret-{{QMGR_NAME_2}}
+      taskRef:
+        name: create-yaml-secret
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: cd_namespace
+          value: {{CD_NAMESPACE}}
+        - name: qmgr_name
+          value: {{QMGR_NAME_2}}
+        - name: secret_name
+          value: {{QMGR_NAME_2}}-cert-secret
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+    - name: create-qm-and-cm-yaml
+      taskRef:
+        name: create-qm-and-cm-yaml
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: cd_namespace
+          value: {{CD_NAMESPACE}}
         - name: qmgr_name_1
           value: {{QMGR_NAME_1}}
         - name: qmgr_name_2
           value: {{QMGR_NAME_2}}
-        - name: deploy_script
-          value: deployQM.sh
-        - name: checkforrunning_script
-          value: checkIfStarted.sh
-        - name: script_dir
-          value: "/workspace/git-ws/srcrepos/mq"
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
       workspaces:
         - name: git-ws
           workspace: git-ws
           
-          
-    # Test QM
-    - name: test-{{QMGR_NAME_1}}-deployment
-      retries: 0
-      runAfter:
-        - deploy-mq
+    - name: upload-yamls
       taskRef:
-        name: execute-mq-test
+        name: push-to-git
       params:
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: qmgr_name
-          value: {{QMGR_NAME_1}}
-        - name: queue_name
-          value: QUEUE1
-        - name: runmqsc_commands
-          value: |
-            DEFINE QLOCAL(QUEUE1)
-            ALTER QLOCAL(QUEUE1) DEFPSIST(YES)
-      
-    - name: test-{{QMGR_NAME_2}}-deployment
-      retries: 0
-      runAfter:
-        - deploy-mq
-      taskRef:
-        name: execute-mq-test
-      params:
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: qmgr_name
-          value: {{QMGR_NAME_2}}
-        - name: queue_name
-          value: QUEUE1
-        - name: runmqsc_commands
-          value: |
-            DEFINE QLOCAL(QUEUE1)
-            ALTER QLOCAL(QUEUE1) DEFPSIST(YES)      
-
-    # Trigger package MQ Pipeline
-    - name: package-mq-pipeline
-      retries: 0
-      runAfter:
-        - test-{{QMGR_NAME_1}}-deployment
-        - test-{{QMGR_NAME_2}}-deployment
-      taskRef:
-        name: run-package-mq-pipeline
-      params:
-        - name: script
-          value: "packagemqPipeline.sh"
-        - name: script_dir
-          value: "/workspace/git-ws/srcrepos/pipeline"            
+        - name: git_target_url
+          value: {{TRGTREPOS}}
+        - name: source_dir
+          value: "/workspace/git-ws/srcrepos/mq/yaml"
+        - name: target_dir
+          value: "/workspace/git-ws/trgtrepos"
       workspaces:
         - name: git-ws
-          workspace: git-ws
+          workspace: git-ws      
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: push-to-git
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_target_url
+      type: string
+    - name: source_dir
+      type: string
+    - name: target_dir
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: git-push
+      image: alpine/git
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        echo "source dir"
+        ls -la $(params.source_dir)
+        echo "target dir"
+        ls -la $(params.target_dir)
 
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: run-package-mq-pipeline
+  name: create-qm-and-cm-yaml
   namespace: {{CI_NAMESPACE}}
 spec:
   params:
-    - name: script
+    - name: ci_namespace
       type: string
-    - name: script_dir
+    - name: cd_namespace
+      type: string
+    - name: qmgr_name_1
+      type: string
+    - name: qmgr_name_2
+      type: string
+    - name: work_dir
       type: string
   workspaces:
     - name: git-ws
   steps:
-    - name: run-script
+    - name: create-qm-and-cm-yaml
       image: quay.io/openshift/origin-cli:latest
       script: |
         #!/bin/sh
         set -e
         set -x
         
-        cd $(params.script_dir)
+        cd $(params.work_dir)
+        mkdir -p ../yaml
         
-        chmod +x $(params.script)
-        ./$(params.script) "pipeline.env"
-
+        cat configmap-QM.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > configmap-QM.yaml
+                
+        cat queuemanager-QM1.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_1).yaml
+          
+        cat queuemanager-QM2.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_2).yaml
+          
+        mv configmap-QM.yaml queuemanager-$(params.qmgr_name_1).yaml queuemanager-$(params.qmgr_name_2).yaml ../yaml
+        
+        
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: create-yaml-secret
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: ci_namespace
+      type: string
+    - name: cd_namespace
+      type: string
+    - name: qmgr_name
+      type: string
+    - name: secret_name
+      type: string
+    - name: work_dir
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: create-yaml-secret
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        cd $(params.work_dir)
+        ls -la .
+        mkdir -p ../yaml
+        
+        oc get secret $(params.secret_name) -n $(params.cd_namespace) -o yaml > runtime-secret-$(params.qmgr_name).yaml
+        
+        cat secret-QM.yaml_template |
+          sed "s#{{SECRET_NAME}}#$secret_name#g;" |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" > secret-$(params.qmgr_name).yaml_template
+       
+        sed -n '/^data:/,/^[^[:space:]]/p' runtime-secret-$(params.qmgr_name).yaml | sed '$d' > data-block-$(params.qmgr_name).yaml
+        cat secret-$(params.qmgr_name).yaml_template data-block-$(params.qmgr_name).yaml > secret-$(params.qmgr_name).yaml \
+          && cat secret-$(params.qmgr_name).yaml
+        
+        rm data-block-$(params.qmgr_name).yaml
+        rm runtime-secret-$(params.qmgr_name).yaml
+        rm secret-$(params.qmgr_name).yaml_template        
+        mv secret-$(params.qmgr_name).yaml ../yaml
+ 
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task

@@ -15,11 +15,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: ci-deploy-mq-pipelinerun
+  name: ci-package-mq-pipelinerun
   namespace: {{CI_NAMESPACE}}
 spec:
   pipelineRef:
-    name: ci-deploy-mq-pipeline
+    name: ci-package-mq-pipeline
   serviceAccountName: pipeline-admin
   workspaces:
     - name: git-ws

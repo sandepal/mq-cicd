@@ -36,12 +36,6 @@ spec:
       value: "{{CD_NAMESPACE}}"
     - name: branch
       value: "{{BRANCH}}"
-    - name: dockerfile_path
-      value: docker/oc-cli-git
-    - name: image_name
-      value: oc-cli-git
-    - name: image_tag
-      value: latest
     - name: qmgr_name_1
       value: {{QMGR_NAME_1}}
     - name: qmgr_name_2

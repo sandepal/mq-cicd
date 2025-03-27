@@ -21,26 +21,26 @@ else
   exit 1
 fi
 
-cat cicd-deploy-mq-pipelinerun.yaml_template |
+cat cicd-package-mq-pipelinerun.yaml_template |
        sed "s#{{SRCREPOS}}#$srcrepos#g;" |
        sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
 	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
        sed "s#{{BRANCH}}#$branch#g;" |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-deploy-mq-pipelinerun$ci_namespace.yaml
+       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-package-mq-pipelinerun$ci_namespace.yaml
 	   
-cat cicd-deploy-mq.yaml_template |
+cat cicd-package-mq.yaml_template |
        sed "s#{{SRCREPOS}}#$srcrepos#g;" |
        sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
 	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
        sed "s#{{BRANCH}}#$branch#g;" |
        sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-deploy-mq$ci_namespace.yaml
+       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-package-mq$ci_namespace.yaml
 
-oc apply -f cicd-deploy-mq$ci_namespace.yaml
-oc apply -f cicd-deploy-mq-pipelinerun$ci_namespace.yaml
+oc apply -f cicd-package-mq$ci_namespace.yaml
+oc apply -f cicd-package-mq-pipelinerun$ci_namespace.yaml
 
-rm cicd-deploy-mq$ci_namespace.yaml
-rm cicd-deploy-mq-pipelinerun$ci_namespace.yaml
+rm cicd-package-mq$ci_namespace.yaml
+rm cicd-package-mq-pipelinerun$ci_namespace.yaml

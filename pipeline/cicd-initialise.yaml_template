@@ -28,12 +28,6 @@ spec:
       default: "{{CD_NAMESPACE}}"
     - name: branch
       default: "{{BRANCH}}"
-    - name: dockerfile_path
-      default: docker/oc-cli-git
-    - name: image_name
-      default: oc-cli-git
-    - name: image_tag
-      default: latest
     - name: qmgr_name_1
       default: {{QMGR_NAME_1}}
     - name: qmgr_name_2
@@ -56,12 +50,12 @@ spec:
         - name: git-ws
           workspace: git-ws
           
-    - name: deploy-pipelines
+    - name: deploy-mq-pipeline
       retries: 0
       runAfter:
         - clone-git
       taskRef:
-        name: run-pipeline-script
+        name: run-deploy-mq-pipeline
       params:
         - name: script
           value: "deploymqPipeline.sh"
@@ -77,12 +71,6 @@ spec:
           value: $(params.cd_namespace)
         - name: branch
           value: $(params.branch)
-        - name: dockerfile_path
-          value: $(params.dockerfile_path)
-        - name: image_name
-          value: $(params.image_name)
-        - name: image_tag
-          value: $(params.image_tag)
         - name: qmgr_name_1
           value: $(params.qmgr_name_1)
         - name: qmgr_name_2
@@ -94,7 +82,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: run-pipeline-script
+  name: run-deploy-mq-pipeline
   namespace: {{CI_NAMESPACE}}
 spec:
   params:
@@ -111,12 +99,6 @@ spec:
     - name: cd_namespace
       type: string
     - name: branch
-      type: string
-    - name: dockerfile_path
-      type: string
-    - name: image_name
-      type: string
-    - name: image_tag
       type: string
     - name: qmgr_name_1
       type: string
@@ -142,9 +124,6 @@ spec:
         ci_namespace="$(params.ci_namespace)"
         cd_namespace="$(params.cd_namespace)"
         branch="$(params.branch)"
-        dockerfile_path="$(params.dockerfile_path)"
-        image_name="$(params.image_name)"
-        image_tag="$(params.image_tag)"
         qmgr_name_1="$(params.qmgr_name_1)"
         qmgr_name_2="$(params.qmgr_name_2)"
         EOF
