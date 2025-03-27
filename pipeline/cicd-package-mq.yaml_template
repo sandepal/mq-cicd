@@ -127,6 +127,8 @@ spec:
       type: string
     - name: target_dir
       type: string
+    - name: branch
+      type: string
   workspaces:
     - name: git-ws
     - name: git-ssh
@@ -137,10 +139,6 @@ spec:
         #!/bin/sh
         set -e
         set -x
-        echo "source dir"
-        ls -la $(params.source_dir)
-        echo "target dir"
-        ls -la $(params.target_dir)
         
         mkdir -p ~/.ssh
         
