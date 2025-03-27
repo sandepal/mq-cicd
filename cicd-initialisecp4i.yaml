@@ -47,8 +47,6 @@ spec:
       retries: 0
       taskRef:
         name: clone-git-task
-      podTemplate:
-        ttlSecondsAfterFinished: 3600  # keep pods for 1 hour after run
       params:
         - name: git-source-url
           value: $(params.git-source-url)
