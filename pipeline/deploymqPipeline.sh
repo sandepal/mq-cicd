@@ -31,4 +31,15 @@ cat cicd-deploy-mq-pipeline.yaml_template |
        sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" |  
        sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" > cicd-deploy-mq-pipeline$ci_namespace.yaml
 
-oc apply -f cicd-deploy-mq-pipeline$ci_namespace.yaml
+# Step 1: Create pipeline + tasks
+oc apply -f cicd-deploy-mq-pipeline$ci_namespace.yaml \
+  --prune -l part=ci-definition \
+  --prune-allowlist=tekton.dev/v1beta1/Task \
+  --prune-allowlist=tekton.dev/v1beta1/Pipeline
+
+# Step 2: Then create the PipelineRun
+oc apply -f cicd-deploy-mq-pipeline$ci_namespace.yaml \
+  --prune -l part=ci-run \
+  --prune-allowlist=tekton.dev/v1beta1/PipelineRun
+
+rm cicd-deploy-mq-pipeline$ci_namespace.yaml
