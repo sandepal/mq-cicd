@@ -111,7 +111,7 @@ spec:
       workspaces:
         - name: git-ws
           workspace: git-ws
-        - name: git-ssh
+        - name: ssh-directory
           workspace: git-ssh
 ---
 apiVersion: tekton.dev/v1beta1
@@ -131,7 +131,7 @@ spec:
       type: string
   workspaces:
     - name: git-ws
-    - name: git-ssh
+    - name: ssh-directory
   steps:
     - name: git-push
       image: alpine/git
