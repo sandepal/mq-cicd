@@ -56,38 +56,38 @@ spec:
         - name: git-ws
           workspace: git-ws
           
-      - name: deploy-pipelines
-        retries: 0
-        runAfter:
-          - clone-git
-        taskRef:
-          name: run-pipeline-script
-        params:
-          - name: script
-            value: "pipeline/installmqPipeline.sh"
-          - name: git-source-url
-            value: $(params.git-source-url)
-          - name: git-target-url
-            value: $(params.git-source-url)
-          - name: ci-namespace
-            value: $(params.ci-namespace)
-          - name: cd-namespace
-            value: $(params.cd-namespace)
-          - name: branch
-            value: $(params.branch)
-          - name: dockerfile-path
-            value: $(params.dockerfile-path)
-          - name: image-name
-            value: $(params.image-name)
-          - name: image-tag
-            value: $(params.image-tag)
-          - name: qmgr_name_1
-            value: $(params.qmgr_name_1)
-          - name: qmgr_name_2
-            value: $(params.qmgr_name_2) 
-        workspaces:
-          - name: git-source
-            workspace: git-source
+    - name: deploy-pipelines
+      retries: 0
+      runAfter:
+        - clone-git
+      taskRef:
+        name: run-pipeline-script
+      params:
+        - name: script
+          value: "pipeline/installmqPipeline.sh"
+        - name: git-source-url
+          value: $(params.git-source-url)
+        - name: git-target-url
+          value: $(params.git-source-url)
+        - name: ci-namespace
+          value: $(params.ci-namespace)
+        - name: cd-namespace
+          value: $(params.cd-namespace)
+        - name: branch
+          value: $(params.branch)
+        - name: dockerfile-path
+          value: $(params.dockerfile-path)
+        - name: image-name
+          value: $(params.image-name)
+        - name: image-tag
+          value: $(params.image-tag)
+        - name: qmgr_name_1
+          value: $(params.qmgr_name_1)
+        - name: qmgr_name_2
+          value: $(params.qmgr_name_2) 
+      workspaces:
+        - name: git-source
+          workspace: git-source
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
