@@ -35,15 +35,15 @@ spec:
       secret:  
         secretName: {{QMGRNAME_2}}-cert-secret
         items:
-          - tls.crt
-  storage:
+          - tls.crt  
+  web:
+    enabled: true
+  queueManager:
+    storage:
       defaultClass: ocs-storagecluster-ceph-rbd
       queueManager:
         type: persistent-claim
         size: 5Gi
-  web:
-    enabled: true
-  queueManager:
     resources:
       requests:
         cpu: 500m

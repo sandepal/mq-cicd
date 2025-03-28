@@ -1,0 +1,14 @@
+oc delete gitopsservice cluster || true
+
+cat setup/ocp4x/argocd-instance/argocd-instance.yaml
+
+
+while ! oc wait pod --timeout=-1s --for=condition=ContainersReady -l app.kubernetes.io/name=openshift-gitops-cntk-server -n openshift-gitops > /dev/null; do sleep 30; done
+
+
+oc patch argocd openshift-gitops  \
+ --namespace openshift-gitops \
+ --type merge \
+ --patch '{"spec":{"applicationInstanceLabelKey":"argocd.argoproj.io/instance"}}'
+ 
+ 
