@@ -205,20 +205,20 @@ spec:
         echo "Generating configmap-QM.yaml:"
         cat configmap-QM.yaml_template |
           sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > configmap-QM.yaml
+          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > configmap-QM.yaml
         
         cat configmap-QM.yaml
         
         cat queuemanager-QM1.yaml_template |
           sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_1).yaml
+          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_1).yaml
         
         cat queuemanager-QM2.yaml_template |
           sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_2).yaml
+          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_2).yaml
         
         mv configmap-QM.yaml queuemanager-$(params.qmgr_name_1).yaml queuemanager-$(params.qmgr_name_2).yaml ../yaml
         

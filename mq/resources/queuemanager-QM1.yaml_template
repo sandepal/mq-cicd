@@ -14,7 +14,7 @@
 apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
-  name: {{QMGR_NAME_1}}
+  name: {{QMGRNAME_1}}
   namespace: {{NAMESPACE}}
 spec:
   version: 9.4.1.0-r2
@@ -26,14 +26,14 @@ spec:
     keys:
     - name: personalcerts
       secret:
-        secretName: {{QMGR_NAME_1}}-cert-secret
+        secretName: {{QMGRNAME_1}}-cert-secret
         items:
           - tls.key
           - tls.crt
     trust:
     - name: trustedcerts
       secret:  
-        secretName: {{QMGR_NAME_2}}-cert-secret
+        secretName: {{QMGRNAME_2}}-cert-secret
         items:
           - tls.crt
   storage:
@@ -55,7 +55,7 @@ spec:
           items:
             - allqms.ini
       - configMap:
-          name: uniformcluster-{{QMGR_NAME_1}}
+          name: uniformcluster-{{QMGRNAME_1}}
           items:
             - qm.ini
     mqsc:
