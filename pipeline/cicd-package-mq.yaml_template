@@ -195,19 +195,19 @@ spec:
         mkdir -p ../yaml
         
         cat configmap-QM.yaml_template |
-          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > configmap-QM.yaml
-                
+          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" |
+          sed "s#{{QMGR_NAME_1}}#$(params.qmgr_name_1)#g;" |
+          sed "s#{{QMGR_NAME_2}}#$(params.qmgr_name_2)#g;" > configmap-QM.yaml
+                       
         cat queuemanager-QM1.yaml_template |
-          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_1).yaml
+          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" |
+          sed "s#{{QMGR_NAME_1}}#$(params.qmgr_name_1)#g;" |
+          sed "s#{{QMGR_NAME_2}}#$(params.qmgr_name_2)#g;" > queuemanager-$(params.qmgr_name_1).yaml
           
         cat queuemanager-QM2.yaml_template |
-          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_2).yaml
+          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" |
+          sed "s#{{QMGR_NAME_1}}#$(params.qmgr_name_1)#g;" |
+          sed "s#{{QMGR_NAME_2}}#$(params.qmgr_name_2)#g;" > queuemanager-$(params.qmgr_name_2).yaml
           
         mv configmap-QM.yaml queuemanager-$(params.qmgr_name_1).yaml queuemanager-$(params.qmgr_name_2).yaml ../yaml
         
@@ -247,8 +247,8 @@ spec:
         oc get secret $(params.secret_name) -n $(params.ci_namespace) -o yaml > runtime-secret-$(params.qmgr_name).yaml
         
         cat secret-QM.yaml_template |
-          sed "s#{{SECRET_NAME}}#$secret_name#g;" |
-          sed "s#{{NAMESPACE}}#$cd_namespace#g;" > secret-$(params.qmgr_name).yaml_template
+          sed "s#{{SECRET_NAME}}#$(params.secret_name)#g;" |
+          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" > secret-$(params.qmgr_name).yaml_template
        
         sed -n '/^data:/,/^[^[:space:]]/p' runtime-secret-$(params.qmgr_name).yaml | sed '$d' > data-block-$(params.qmgr_name).yaml
         cat secret-$(params.qmgr_name).yaml_template data-block-$(params.qmgr_name).yaml > secret-$(params.qmgr_name).yaml \
