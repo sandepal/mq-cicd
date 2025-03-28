@@ -194,21 +194,32 @@ spec:
         cd $(params.work_dir)
         mkdir -p ../yaml
         
+        cd_namespace=$(params.cd_namespace)
+        qmgr_name_1=$(params.qmgr_name_1)
+        qmgr_name_2=$(params.qmgr_name_2)
+        
+        echo "cd_namespace: $cd_namespace"
+        echo "qmgr_name_1: $qmgr_name_1"
+        echo "qmgr_name_2: $qmgr_name_2"
+        
+        echo "Generating configmap-QM.yaml:"
         cat configmap-QM.yaml_template |
-          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" |
-          sed "s#{{QMGR_NAME_1}}#$(params.qmgr_name_1)#g;" |
-          sed "s#{{QMGR_NAME_2}}#$(params.qmgr_name_2)#g;" > configmap-QM.yaml
-                       
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > configmap-QM.yaml
+        
+        cat configmap-QM.yaml
+        
         cat queuemanager-QM1.yaml_template |
-          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" |
-          sed "s#{{QMGR_NAME_1}}#$(params.qmgr_name_1)#g;" |
-          sed "s#{{QMGR_NAME_2}}#$(params.qmgr_name_2)#g;" > queuemanager-$(params.qmgr_name_1).yaml
-          
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_1).yaml
+        
         cat queuemanager-QM2.yaml_template |
-          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" |
-          sed "s#{{QMGR_NAME_1}}#$(params.qmgr_name_1)#g;" |
-          sed "s#{{QMGR_NAME_2}}#$(params.qmgr_name_2)#g;" > queuemanager-$(params.qmgr_name_2).yaml
-          
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_2).yaml
+        
         mv configmap-QM.yaml queuemanager-$(params.qmgr_name_1).yaml queuemanager-$(params.qmgr_name_2).yaml ../yaml
         
         
