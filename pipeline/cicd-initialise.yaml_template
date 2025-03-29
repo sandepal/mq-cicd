@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
@@ -49,16 +50,16 @@ spec:
       workspaces:
         - name: git-ws
           workspace: git-ws
-          
-    - name: deploy-mq-pipeline
+     
+    - name: infra-pipeline
       retries: 0
       runAfter:
         - clone-git
       taskRef:
-        name: run-deploy-mq-pipeline
+        name: run-infra-pipeline
       params:
         - name: script
-          value: "deploymqPipeline.sh"
+          value: "infraPipeline.sh"
         - name: script_dir
           value: "/workspace/git-ws/srcrepos/pipeline"
         - name: git_source_url
@@ -82,7 +83,7 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: run-deploy-mq-pipeline
+  name: run-infra-pipeline
   namespace: {{CI_NAMESPACE}}
 spec:
   params:
@@ -133,7 +134,7 @@ spec:
         
         chmod +x $(params.script)
         ./$(params.script) "pipeline.env"
-        
+
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task

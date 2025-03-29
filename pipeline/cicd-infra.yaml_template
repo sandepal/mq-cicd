@@ -1,0 +1,111 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ci-infra-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
+      default: "{{BRANCH}}"
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
+  workspaces:
+    - name: git-ws  
+  tasks:         
+    - name: dummy-task
+      retries: 0
+      taskRef:
+        name: dummy-task
+      params:
+        - name: git_source_url
+          value: $(params.git_source_url)
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+    # Trigger package MQ Pipeline
+    - name: deploy-mq-pipeline
+      retries: 0
+      runAfter:
+        - dummy-task
+      taskRef:
+        name: run-deploy-mq-pipeline
+      params:
+        - name: script
+          value: "deploymqPipeline.sh"
+        - name: script_dir
+          value: "/workspace/git-ws/srcrepos/pipeline"            
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: dummy-task
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      type: string     
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: dummy-task
+      image: alpine/git
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        echo "Dummy task"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-deploy-mq-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: script
+      type: string
+    - name: script_dir
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: run-script
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        cd $(params.script_dir)
+        
+        chmod +x $(params.script)
+        ./$(params.script) "pipeline.env"
