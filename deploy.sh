@@ -210,6 +210,60 @@ if [ "$REASON" == "Failed" ]; then
   exit 1
 fi
 
+# cicd-ace-pipelinerun
+cat pipeline/cicd-ace-pipelinerun.yaml_template |
+       sed "s#{{SRCREPOS}}#$srcrepos#g;" |
+       sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
+       sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
+	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
+       sed "s#{{BRANCH}}#$branch#g;" |
+       sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-ace-pipelinerun$ci_namespace.yaml
+
+cat pipeline/cicd-ace.yaml_template |
+       sed "s#{{SRCREPOS}}#$srcrepos#g;" |
+       sed "s#{{TRGTREPOS}}#$trgtrepos#g;" |
+       sed "s#{{CI_NAMESPACE}}#$ci_namespace#g;" |
+	   sed "s#{{CD_NAMESPACE}}#$cd_namespace#g;" |
+       sed "s#{{BRANCH}}#$branch#g;" |
+       sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+       sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > cicd-ace$ci_namespace.yaml
+
+
+oc apply -f cicd-ace$ci_namespace.yaml
+oc apply -f cicd-ace-pipelinerun$ci_namespace.yaml
+
+rm cicd-ace$ci_namespace.yaml
+rm cicd-ace-pipelinerun$ci_namespace.yaml
+
+PIPELINE_RUN_NAME="cicd-ace-pipelinerun"
+while true; do
+  STATUS=$(oc get pipelinerun "$PIPELINE_RUN_NAME" -o jsonpath='{.status.conditions[0].status}')
+  REASON=$(oc get pipelinerun "$PIPELINE_RUN_NAME" -o jsonpath='{.status.conditions[0].reason}')
+  
+  if [ "$STATUS" == "True" ] && [ "$REASON" == "Succeeded" ]; then
+    echo "$PIPELINE_RUN_NAME completed successfully."
+    break
+  elif [ "$REASON" == "Failed" ]; then
+    echo "$PIPELINE_RUN_NAME failed."
+    break
+  else
+    echo "Waiting for $PIPELINE_RUN_NAME to complete..."
+    sleep 5
+  fi
+done
+
+# Fetch logs
+tkn pipelinerun logs "$PIPELINE_RUN_NAME" -n "$ci_namespace" > "$log_file"
+# Append to pod log
+oc exec -i cicd-log-pod -n "$ci_namespace" -- tee -a /logs/$log_file < "$log_file" > /dev/null
+
+# Exit with error if failed
+if [ "$REASON" == "Failed" ]; then
+  exit 1
+fi
+
+
 
 ## cicd-deploy-mq-pipelinerun
 #cat pipeline/cicd-deploy-mq-pipelinerun.yaml_template |

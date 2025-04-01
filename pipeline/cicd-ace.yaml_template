@@ -1,0 +1,129 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: cicd-ace-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
+      default: "{{BRANCH}}"
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
+  workspaces:
+    - name: git-ws  
+  tasks:         
+    - name: build-bar-producer-1
+      retries: 3
+      taskRef:
+        name: build-ace-bar       
+      params:
+          - name: source_git_dir
+            value: "/workspace/git-ws/srcrepos/"
+          - name: target_git_dir
+            value: "/workspace/git-ws/trgtrepos/"
+          - name: project_dir
+            value: "ace/resources/source/gitops_demo_client"
+          - name: bar
+            value: "gitops_demo_client.bar"
+          - name: override
+            value: "ace/resources/overrides/gitops_demo_client.properties"        
+        workspaces:
+          - name: git-ws
+            workspace: git-ws
+    
+    - name: build-bar-producer-2
+      retries: 3
+      taskRef:
+        name: build-ace-bar
+      params:
+        - name: source_git_dir
+          value: "/workspace/git-ws/srcrepos"
+        - name: target_git_dir
+          value: "/workspace/git-ws/trgtrepos"
+        - name: project_dir
+          value: "ace/resources/source/gitops_demo_server"
+        - name: barfile_name
+          value: "gitops_demo_server.bar"
+        - name: barfile_dir
+          value: "ace/generated-bars"
+        - name: override
+          value: "ace/resources/overrides/gitops_demo_server.properties"        
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-ace-bar
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: source_git_dir
+      type: string
+    - name: target_git_dir
+      type: string
+    - name: project_dir
+      type: string
+    - name: barfile_name
+      type: string
+    - name: barfile_dir
+      type: string
+    - name: override
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: build-bar
+      image: cp.icr.io/cp/appc/ace-server-prod:13.0.2.0-r1-20241217-074354@sha256:a535f9543528f3670f5c89d2f24fcd3be0b1a4dc5803b32eb59dc882079ab4fb
+      script: |
+        #!/bin/bash
+        set -e
+        set -x
+        
+        barfile_name=$(params.barfile_name)
+        project_dir=$(params.source_git_dir)/$(params.project_dir)
+        initial_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME}"
+        override_file_path=$(params.source_git_dir)/$(params.override)
+        override_bar_path="$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME%.bar}.override.bar"
+                
+        mkdir -p $(params.source_git_dir)/$(params.barfile_dir)
+        rm -f $(params.source_git_dir)/$(params.barfile_dir)/*.bar || true
+        
+        echo "barfile_name=$barfile_name"
+        echo "initial_bar_path=$initial_bar_path"
+        echo "override_bar_path=$override_bar_path"        
+                
+        ibmint package --input-path $project_dir --output-bar-file $initial_bar_path        
+        ibmint apply overrides $override_file_path --input-bar-file $initial_bar_path --output-bar-file $override_bar_path
+        
+        echo "Generated overridden BAR: $override_bar_path"
+        
+        mv "$override_bar_path" "$initial_bar_path"
+
+    
