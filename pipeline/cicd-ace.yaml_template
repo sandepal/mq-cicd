@@ -110,9 +110,9 @@ spec:
         
         barfile_name=$(params.barfile_name)
         project_dir=$(params.source_git_dir)/$(params.project_dir)
-        initial_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME}
+        initial_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${barfile_name}
         override_file_path=$(params.source_git_dir)/$(params.override)
-        override_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME%.bar}.override.bar
+        override_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${barfile_name%.bar}.override.bar
                 
         mkdir -p $(params.source_git_dir)/$(params.barfile_dir)
         rm -f $(params.source_git_dir)/$(params.barfile_dir)/*.bar || true
