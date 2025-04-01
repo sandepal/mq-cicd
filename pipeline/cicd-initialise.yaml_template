@@ -162,6 +162,12 @@ spec:
         set -x
         cd /workspace/git-ws
         git clone $(params.git_source_url) srcrepos        
-        ls -la srcrepos
         git clone $(params.git_target_url) trgtrepos
+        
+        # Set read/write/execute permissions for all users
+        chmod -R a+rwx /workspace/git-ws/srcrepos
+        chmod -R a+rwx /workspace/git-ws/trgtrepos
+        
+        ls -la srcrepos
         ls -la trgtrepos
+        
