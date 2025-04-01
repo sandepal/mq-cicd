@@ -1,0 +1,167 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: cicd-initialise-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
+      default: "{{BRANCH}}"
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
+  workspaces:
+    - name: git-ws  
+  tasks:
+    - name: clone-git
+      retries: 0
+      taskRef:
+        name: clone-git-task
+      retries: 3
+      params:
+        - name: git_source_url
+          value: $(params.git_source_url)
+        - name: git_target_url
+          value: "{{TRGTREPOS}}"  
+        - name: branch
+          value: "$(params.branch)"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+     
+    #- name: infra-pipeline
+    #  retries: 0
+    #  runAfter:
+    #    - clone-git
+    #  taskRef:
+    #    name: run-infra-pipeline
+    #  params:
+    #    - name: script
+    #      value: "infraPipeline.sh"
+    #    - name: script_dir
+    #      value: "/workspace/git-ws/srcrepos/pipeline"
+    #    - name: git_source_url
+    #      value: $(params.git_source_url)
+    #    - name: git_target_url
+    #      value: $(params.git_target_url)
+    #    - name: ci_namespace
+    #      value: $(params.ci_namespace)
+    #    - name: cd_namespace
+    #      value: $(params.cd_namespace)
+    #    - name: branch
+    #      value: $(params.branch)
+    #    - name: qmgr_name_1
+    #      value: $(params.qmgr_name_1)
+    #    - name: qmgr_name_2
+    #      value: $(params.qmgr_name_2)               
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-infra-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: script
+      type: string
+    - name: script_dir
+      type: string
+    - name: git_source_url
+      type: string
+    - name: git_target_url
+      type: string
+    - name: ci_namespace
+      type: string
+    - name: cd_namespace
+      type: string
+    - name: branch
+      type: string
+    - name: qmgr_name_1
+      type: string
+    - name: qmgr_name_2
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: run-script
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        cd $(params.script_dir)
+        ls -la .
+        
+        # Generate .env file with pipeline parameters
+        cat <<EOF > pipeline.env
+        git_source_url="$(params.git_source_url)"
+        git_target_url="$(params.git_target_url)"
+        ci_namespace="$(params.ci_namespace)"
+        cd_namespace="$(params.cd_namespace)"
+        branch="$(params.branch)"
+        qmgr_name_1="$(params.qmgr_name_1)"
+        qmgr_name_2="$(params.qmgr_name_2)"
+        EOF
+        
+        echo "Generated env file:"
+        cat pipeline.env
+        
+        chmod +x $(params.script)
+        ./$(params.script) "pipeline.env"
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clone-git-task
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      type: string
+    - name: git_target_url
+      type: string
+    - name: branch
+      type: string
+      default: main      
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: git-clone
+      image: alpine/git
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        cd /workspace/git-ws
+        git clone $(params.git_source_url) srcrepos        
+        ls -la srcrepos
+        git clone $(params.git_target_url) trgtrepos
+        ls -la trgtrepos

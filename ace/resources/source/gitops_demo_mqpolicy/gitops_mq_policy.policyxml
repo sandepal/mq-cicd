@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policies>
+  <policy policyType="MQEndpoint" policyName="gitops_mq_policy" policyTemplate="MQEndpoint">
+    <connection>CCDT</connection>
+    <destinationQueueManagerName>*ANY_QM</destinationQueueManagerName>
+    <queueManagerHostname></queueManagerHostname>
+    <listenerPortNumber>1414</listenerPortNumber>
+    <channelName></channelName>
+    <CCDTUrl></CCDTUrl>
+    <securityIdentity></securityIdentity>
+    <useSSL>true</useSSL>
+    <SSLPeerName></SSLPeerName>
+    <SSLCipherSpec></SSLCipherSpec>
+    <SSLCertificateLabel></SSLCertificateLabel>
+    <MQApplName>ACE_DEMO</MQApplName>
+    <reconnectOption>enabled</reconnectOption>
+  </policy>
+</policies>

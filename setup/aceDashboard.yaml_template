@@ -1,0 +1,41 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Dashboard
+metadata: 
+  name: ace-dashboard-01-quickstart
+  namespace: {{NAMESPACE}}
+spec:
+  api:
+    enabled: true
+  authentication:
+    integrationKeycloak:
+      enabled: true
+  authorization:
+    integrationKeycloak:
+      enabled: true
+  displayMode: IntegrationRuntimes
+  license:
+    accept: true
+    license: L-KPRV-AUG9NC
+    use: CloudPakForIntegrationNonProduction
+  pod:
+    containers:
+      content-server:
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+      control-ui:
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 125Mi
+  replicas: 1
+  storage:
+    class: ocs-storagecluster-cephfs
+    size: 5Gi
+    type: persistent-claim
+  version: 13.0.2

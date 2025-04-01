@@ -1,0 +1,187 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: cicd-infra-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
+      default: "{{BRANCH}}"
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
+  workspaces:
+    - name: git-ws  
+  tasks:         
+    - name: setup-ace-dashboard-{{CI_NAMESPACE}}
+      taskRef:
+        name: setup-ace-dashboard
+      retries: 3
+      params:
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/setup"
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: checkforrunning_script
+          value: "checkIfAceDashboardStarted.sh"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+    
+    - name: setup-ace-dashboard-{{CD_NAMESPACE}}
+      taskRef:
+        name: setup-ace-dashboard
+      retries: 3
+      params:
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/setup"
+        - name: namespace
+          value: {{CD_NAMESPACE}}
+        - name: checkforrunning_script
+          value: "checkIfAceDashboardStarted.sh"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+    
+    #- name: setup-argo
+    #  taskRef:
+    #    name: setup-argo
+    #  retries: 3
+    #  params:
+    #    - name: work_dir
+    #      value: "/workspace/git-ws/srcrepos/argocd"
+    #    - name: target_dir
+    #      value: "yaml"
+    #    - name: git_target_url
+    #      value: {{TRGTREPOS}}
+    #    - name: cd_namespace
+    #      value: {{CD_NAMESPACE}}
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: setup-ace-dashboard
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: work_dir
+      type: string
+    - name: namespace
+      type: string
+    - name: checkforrunning_script
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: setup-ace-dashboard
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        namespace=$(params.namespace)        
+        DASHBOARD_NAME=$(oc get dashboard -n "$namespace" -o jsonpath='{.items[*].metadata.name}')
+        
+        if [ -n "$DASHBOARD_NAME" ]; then
+          echo "Dashboard already exists: $DASHBOARD_NAME"
+          echo "Skipping dashboard creation steps..."
+          exit 0
+        fi
+        
+        echo "No dashboard found in namespace $namespace"
+        echo "Proceed to create dashboard"
+        
+        cd $(params.work_dir)
+        
+        ls -la
+        cat aceDashboard.yaml_template |
+          sed "s#{{NAMESPACE}}#$namespace#g;" > aceDashboard-$namespace.yaml
+        
+        oc apply -f aceDashboard-$namespace.yaml
+        
+        chmod +x $(params.checkforrunning_script)
+        # Run both scripts in parallel
+        ./$(params.checkforrunning_script) $namespace "ace-dashboard-01-quickstart" &
+        PID=$!
+        
+        # Wait for finish
+        wait $PID
+        
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: setup-argo
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: work_dir
+      type: string
+    - name: target_dir
+      type: string
+    - name: git_target_url
+      type: string
+    - name: cd_namespace
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: setup-argo
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        argocdinstance=$(oc get argocd -n openshift-gitops -o jsonpath='{.items[0].metadata.name}')
+        
+        oc patch argocd $argocdinstance \
+        --namespace openshift-gitops \
+        --type merge \
+        --patch '{"spec":{"applicationInstanceLabelKey":"argocd.argoproj.io/instance"}}'
+        
+        cd $(params.work_dir)
+        oc apply -f custom-argocd-app-controller-clusterrole.yaml
+        oc apply -f custom-argocd-app-controller-clusterrolebinding.yaml
+                
+        target_dir=$(params.target_dir)
+        git_target_url=$(params.git_target_url)
+        cd_namespace=$(params.cd_namespace)
+        cat mq-app.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{PATH}}#$target_dir#g;" |
+          sed "s#{{REPOURL}}#$git_target_url#g;" > mq-app.yaml
+        
+        cat mq-app.yaml
+        
+        oc apply -f mq-app.yaml
+        
+---

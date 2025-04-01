@@ -1,0 +1,47 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: uniformcluster
+  namespace: {{NAMESPACE}}
+data:
+  uniformcluster.mqsc: |-
+    define channel('+AUTOCL+_+QMNAME+') chltype(clusrcvr) trptype(tcp) conname('+INICONNAME+') cluster('+AUTOCL+') SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER') HBINT(1) SHORTRTY(200) SHORTTMR(5) replace
+    define ql(APPQ) DEFPSIST(YES)
+    define ql(REQ.Q) DEFPSIST(YES)
+    define ql(RES.Q) DEFPSIST(YES)
+    define ql(DLQ)
+    ALTER QMGR DEADQ(DLQ)
+    DEFINE CHANNEL(UNICLUSTER_CHL) CHLTYPE(SVRCONN) TRPTYPE(TCP) HBINT(1) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER') SHARECNV(1)
+    set chlauth(UNICLUSTER_*) TYPE(BLOCKUSER) USERLIST(NOBODY)
+    REFRESH SECURITY TYPE(CONNAUTH)
+  allqms.ini: |-
+    AutoCluster:
+      Repository2Conname={{QMGRNAME_2}}-ibm-mq.{{NAMESPACE}}(1414)
+      Repository2Name={{QMGRNAME_2}}
+      Repository1Conname={{QMGRNAME_1}}-ibm-mq.{{NAMESPACE}}(1414)
+      Repository1Name={{QMGRNAME_1}}
+      ClusterName=UNICLUSTER
+      Type=Uniform
+    SSL:
+      OutboundSNI=HOSTNAME
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: uniformcluster-{{QMGRNAME_1}}
+  namespace: {{NAMESPACE}}
+data:
+  qm.ini: |-
+    Variables:
+      INICONNAME={{QMGRNAME_1}}-ibm-mq.{{NAMESPACE}}(1414)
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: uniformcluster-{{QMGRNAME_2}}
+  namespace: {{NAMESPACE}}
+data:
+  qm.ini: |-
+    Variables:
+      INICONNAME={{QMGRNAME_2}}-ibm-mq.{{NAMESPACE}}(1414)
+

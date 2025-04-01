@@ -1,0 +1,35 @@
+oc delete gitopsservice cluster || true
+
+cat setup/ocp4x/argocd-instance/argocd-instance.yaml
+
+
+while ! oc wait pod --timeout=-1s --for=condition=ContainersReady -l app.kubernetes.io/name=openshift-gitops-cntk-server -n openshift-gitops > /dev/null; do sleep 30; done
+
+
+oc patch argocd openshift-gitops  \
+ --namespace openshift-gitops \
+ --type merge \
+ --patch '{"spec":{"applicationInstanceLabelKey":"argocd.argoproj.io/instance"}}'
+ 
+
+$ oc apply -f argocd-instance.yaml
+argocd.argoproj.io/openshift-gitops-cntk created
+$ oc patch argocd openshift-gitops-cntk   --namespace openshift-gitops  --type merge  --patch '{"spec":{"applicationInstanceLabelKey":"argocd.argoproj.io/instance"}}'
+argocd.argoproj.io/openshift-gitops-cntk patched
+
+
+
+mkdir $$tmp$$
+cd $$tmp$$
+ingress_secret_name=$(oc get ingresscontroller.operator default \
+--namespace openshift-ingress-operator \
+-o jsonpath='{.spec.defaultCertificate.name}')
+oc extract secret/$ingress_secret_name -n openshift-ingress
+oc create secret tls -n openshift-gitops openshift-gitops-cntk-tls --cert=tls.crt --key=tls.key --dry-run=client -o yaml | oc apply -f -
+cd ..
+rm -rf $$tmp$$
+
+
+oc get route openshift-gitops-cntk-server -n openshift-gitops -o jsonpath='{"https://"}{.spec.host}{"\n"}'
+
+oc extract secret/openshift-gitops-cntk-cluster -n openshift-gitops --keys="admin.password" --to=-

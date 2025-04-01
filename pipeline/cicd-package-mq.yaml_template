@@ -1,0 +1,282 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: cicd-package-mq-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
+      default: "{{BRANCH}}"
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
+  workspaces:
+    - name: git-ws
+    - name: git-ssh
+  tasks:
+    - name: create-yaml-secret-{{QMGR_NAME_1}}
+      taskRef:
+        name: create-yaml-secret
+      retries: 3
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: cd_namespace
+          value: {{CD_NAMESPACE}}
+        - name: qmgr_name
+          value: {{QMGR_NAME_1}}
+        - name: secret_name
+          value: {{QMGR_NAME_1}}-cert-secret
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+    - name: create-yaml-secret-{{QMGR_NAME_2}}
+      runAfter:
+        - create-yaml-secret-{{QMGR_NAME_1}}
+      taskRef:
+        name: create-yaml-secret
+      retries: 3
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: cd_namespace
+          value: {{CD_NAMESPACE}}
+        - name: qmgr_name
+          value: {{QMGR_NAME_2}}
+        - name: secret_name
+          value: {{QMGR_NAME_2}}-cert-secret
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+    - name: create-qm-and-cm-yaml
+      runAfter:
+        - create-yaml-secret-{{QMGR_NAME_2}}
+      taskRef:
+        name: create-qm-and-cm-yaml
+      retries: 3
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: cd_namespace
+          value: {{CD_NAMESPACE}}
+        - name: qmgr_name_1
+          value: {{QMGR_NAME_1}}
+        - name: qmgr_name_2
+          value: {{QMGR_NAME_2}}
+        - name: work_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws        
+          
+    - name: push-to-git
+      runAfter:
+        - create-qm-and-cm-yaml
+      taskRef:
+        name: push-to-git
+      retries: 3
+      params:
+        - name: git_target_url
+          value: {{TRGTREPOS}}
+        - name: branch
+          value: "{{BRANCH}}"
+        - name: source_dir
+          value: "/workspace/git-ws/srcrepos/mq/yaml"
+        - name: target_dir
+          value: "/workspace/git-ws/trgtrepos"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+        - name: ssh-directory
+          workspace: git-ssh
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: push-to-git
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_target_url
+      type: string
+    - name: source_dir
+      type: string
+    - name: target_dir
+      type: string
+    - name: branch
+      type: string
+  workspaces:
+    - name: git-ws
+    - name: ssh-directory
+  steps:
+    - name: git-push
+      image: alpine/git
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        mkdir -p ~/.ssh
+        
+        cp /workspace/ssh-directory/ssh-privatekey ~/.ssh/id_rsa
+        cp /workspace/ssh-directory/known_hosts ~/.ssh/known_hosts
+        chmod 600 ~/.ssh/id_rsa
+        chmod 644 ~/.ssh/known_hosts
+        
+        mkdir -p $(params.target_dir)/yaml
+        cp -f $(params.source_dir)/*.yaml $(params.target_dir)/yaml/
+        cd $(params.target_dir)
+        
+        echo "Switching git remote to SSH"
+        GIT_URL=$(git config --get remote.origin.url)        
+        SSH_URL=$(echo "$GIT_URL" | sed -E 's|https://([^/]+)/([^/]+)/(.+)\.git|git@\1:\2/\3.git|')        
+        git remote set-url origin "$SSH_URL"
+        
+        git config user.name "tekton-bot"
+        git config user.email "tekton@ci"
+        git status
+        git add yaml/*.yaml
+        
+        # Only commit if there are changes
+        if ! git diff --cached --quiet; then
+          git commit -m 'Add queuemanager yaml files via Tekton'
+          git push origin $(params.branch)
+        else
+          echo "No changes to commit."
+        fi
+        
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: create-qm-and-cm-yaml
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: ci_namespace
+      type: string
+    - name: cd_namespace
+      type: string
+    - name: qmgr_name_1
+      type: string
+    - name: qmgr_name_2
+      type: string
+    - name: work_dir
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: create-qm-and-cm-yaml
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        cd $(params.work_dir)
+        mkdir -p ../yaml
+        
+        cd_namespace=$(params.cd_namespace)
+        qmgr_name_1=$(params.qmgr_name_1)
+        qmgr_name_2=$(params.qmgr_name_2)
+        
+        echo "cd_namespace: $cd_namespace"
+        echo "qmgr_name_1: $qmgr_name_1"
+        echo "qmgr_name_2: $qmgr_name_2"
+        
+        echo "Generating configmap-QM.yaml:"
+        cat configmap-QM.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > configmap-QM.yaml
+        
+        cat queuemanager-QM1.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_1).yaml
+        
+        cat queuemanager-QM2.yaml_template |
+          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
+          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
+          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > queuemanager-$(params.qmgr_name_2).yaml
+        
+        mv configmap-QM.yaml queuemanager-$(params.qmgr_name_1).yaml queuemanager-$(params.qmgr_name_2).yaml ../yaml
+        
+        
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: create-yaml-secret
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: ci_namespace
+      type: string
+    - name: cd_namespace
+      type: string
+    - name: qmgr_name
+      type: string
+    - name: secret_name
+      type: string
+    - name: work_dir
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: create-yaml-secret
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        cd $(params.work_dir)
+        ls -la .
+        mkdir -p ../yaml
+        
+        oc get secret $(params.secret_name) -n $(params.ci_namespace) -o yaml > runtime-secret-$(params.qmgr_name).yaml
+        
+        cat secret-QM.yaml_template |
+          sed "s#{{SECRET_NAME}}#$(params.secret_name)#g;" |
+          sed "s#{{NAMESPACE}}#$(params.cd_namespace)#g;" > secret-$(params.qmgr_name).yaml_template
+       
+        sed -n '/^data:/,/^[^[:space:]]/p' runtime-secret-$(params.qmgr_name).yaml | sed '$d' > data-block-$(params.qmgr_name).yaml
+        cat secret-$(params.qmgr_name).yaml_template data-block-$(params.qmgr_name).yaml > secret-$(params.qmgr_name).yaml \
+          && cat secret-$(params.qmgr_name).yaml
+        
+        rm data-block-$(params.qmgr_name).yaml
+        rm runtime-secret-$(params.qmgr_name).yaml
+        rm secret-$(params.qmgr_name).yaml_template        
+        mv secret-$(params.qmgr_name).yaml ../yaml
+ 
+

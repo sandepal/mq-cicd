@@ -1,0 +1,329 @@
+# © Copyright IBM Corporation 2023
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: cicd-deploy-mq-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: git_source_url
+      default: "{{SRCREPOS}}"
+    - name: git_target_url
+      default: "{{TRGTREPOS}}"
+    - name: ci_namespace
+      default: "{{CI_NAMESPACE}}"
+    - name: cd_namespace
+      default: "{{CD_NAMESPACE}}"
+    - name: branch
+      default: "{{BRANCH}}"
+    - name: qmgr_name_1
+      default: {{QMGR_NAME_1}}
+    - name: qmgr_name_2
+      default: {{QMGR_NAME_2}}    
+  workspaces:
+    - name: git-ws
+  tasks:
+    - name: create-cert-{{QMGR_NAME_1}}
+      taskRef:
+        name: create-mq-cert
+      retries: 3
+      params:
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: cert_name
+          value: {{QMGR_NAME_1}}-cert
+        - name: secret_name
+          value: {{QMGR_NAME_1}}-cert-secret
+        - name: common_name
+          value: ibmwebspheremq{{QMGR_NAME_1}}
+    
+    - name: create-cert-{{QMGR_NAME_2}}
+      taskRef:
+        name: create-mq-cert
+      retries: 3
+      params:
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: cert_name
+          value: {{QMGR_NAME_2}}-cert
+        - name: secret_name
+          value: {{QMGR_NAME_2}}-cert-secret
+        - name: common_name
+          value: ibmwebspheremq{{QMGR_NAME_2}}
+
+    # Deploy IBM MQ
+    - name: deploy-mq
+      retries: 3
+      runAfter:
+        - create-cert-{{QMGR_NAME_1}}
+        - create-cert-{{QMGR_NAME_2}}
+      taskRef:
+        name: execute-mq-deploy
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: qmgr_name_1
+          value: {{QMGR_NAME_1}}
+        - name: qmgr_name_2
+          value: {{QMGR_NAME_2}}
+        - name: deploy_script
+          value: deployQM.sh
+        - name: checkforrunning_script
+          value: checkIfStarted.sh
+        - name: script_dir
+          value: "/workspace/git-ws/srcrepos/mq"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+          
+    # Test QM
+    - name: test-{{QMGR_NAME_1}}-deployment
+      retries: 3
+      runAfter:
+        - deploy-mq
+      taskRef:
+        name: execute-mq-test
+      params:
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: qmgr_name
+          value: {{QMGR_NAME_1}}
+        - name: queue_name
+          value: QUEUE1
+        - name: runmqsc_commands
+          value: |
+            DEFINE QLOCAL(QUEUE1)
+            ALTER QLOCAL(QUEUE1) DEFPSIST(YES)
+      
+    - name: test-{{QMGR_NAME_2}}-deployment
+      retries: 3
+      runAfter:
+        - deploy-mq
+      taskRef:
+        name: execute-mq-test
+      params:
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: qmgr_name
+          value: {{QMGR_NAME_2}}
+        - name: queue_name
+          value: QUEUE1
+        - name: runmqsc_commands
+          value: |
+            DEFINE QLOCAL(QUEUE1)
+            ALTER QLOCAL(QUEUE1) DEFPSIST(YES)      
+
+
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-package-mq-pipeline
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: script
+      type: string
+    - name: script_dir
+      type: string
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: run-script
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        cd $(params.script_dir)
+        
+        chmod +x $(params.script)
+        ./$(params.script) "pipeline.env"
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: execute-mq-test
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: namespace
+      type: string
+    - name: qmgr_name
+      type: string
+    - name: queue_name
+      type: string    
+    - name: runmqsc_commands
+      type: string
+      
+  steps:
+    - name: test-put-get
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+        set -x  # Optional: verbose execution
+        
+        echo "Finding pod..."
+        POD=$(oc get pod -l app.kubernetes.io/instance=$(params.qmgr_name) -o jsonpath='{.items[0].metadata.name}')
+        echo "Found pod: $POD"
+        
+        echo "Creating remote test script..."
+        QM_NAME=$(params.qmgr_name)
+        QUEUE_NAME=$(params.queue_name)
+        
+        echo '#!/bin/bash' > /tmp/test-script.sh
+        echo 'set -e' >> /tmp/test-script.sh
+        echo 'echo "Running MQSC commands line by line..."' >> /tmp/test-script.sh
+        echo 'while IFS= read -r line; do' >> /tmp/test-script.sh
+        echo '  if [ -n "$line" ]; then' >> /tmp/test-script.sh
+        echo '    echo ">> $line"' >> /tmp/test-script.sh
+        echo "    echo \"\$line\" | runmqsc $QM_NAME | tee -a /tmp/mqsc-output.log" >> /tmp/test-script.sh
+        echo '  fi' >> /tmp/test-script.sh
+        echo "done <<< \"$(params.runmqsc_commands)\"" >> /tmp/test-script.sh
+        echo "echo \"Running amqsput...\"" >> /tmp/test-script.sh
+        echo "echo \"Hello from Tekton\" | /opt/mqm/samp/bin/amqsput $QUEUE_NAME $QM_NAME" >> /tmp/test-script.sh
+        echo "echo \"Running amqsget...\"" >> /tmp/test-script.sh
+        echo "/opt/mqm/samp/bin/amqsget $QUEUE_NAME $QM_NAME" >> /tmp/test-script.sh
+        echo "echo \"All commands executed successfully.\"" >> /tmp/test-script.sh
+        echo "echo \"===== MQSC Output =====\"" >> /tmp/test-script.sh
+        echo "cat /tmp/mqsc-output.log" >> /tmp/test-script.sh
+        
+        chmod +x /tmp/test-script.sh
+        echo "Copying script into pod..."
+        oc cp /tmp/test-script.sh $POD:/tmp/test-script.sh -n $(params.namespace)
+        
+        echo "Executing script in pod..."
+        oc exec $POD -n $(params.namespace) -- bash /tmp/test-script.sh
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: execute-mq-deploy
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: ci_namespace
+      type: string
+    - name: qmgr_name_1
+      type: string
+    - name: qmgr_name_2
+      type: string
+    - name: deploy_script
+      type: string
+    - name: checkforrunning_script
+      type: string
+    - name: script_dir
+      type: string 
+    
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: apply-cert-resources
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+        
+        cd $(params.script_dir)
+        chmod +x $(params.deploy_script)
+        ./$(params.deploy_script) "$(params.ci_namespace)" "$(params.qmgr_name_1)" "$(params.qmgr_name_2)" "resources"
+        
+        chmod +x $(params.checkforrunning_script)
+        # Run both scripts in parallel
+        ./$(params.checkforrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_1)" &
+        PID1=$!
+        
+        ./$(params.checkforrunning_script) "$(params.ci_namespace)" "$(params.qmgr_name_2)"&
+        PID2=$!
+        
+        # Wait for both to finish
+        wait $PID1
+        wait $PID2
+        
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: create-mq-cert
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: ci_namespace
+      type: string
+      default: default
+    - name: cert_name
+      type: string
+      default: mq-cert
+    - name: secret_name
+      type: string
+      default: mq-key-store
+    - name: common_name
+      type: string
+      default: mq.ibm.com
+  steps:
+    - name: apply-cert-resources
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+
+        cat <<EOF | oc apply -f -
+        apiVersion: cert-manager.io/v1
+        kind: Issuer
+        metadata:
+          name: selfsigning-issuer
+          namespace: $(params.ci_namespace)
+        spec:
+          selfSigned: {}
+        ---
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: $(params.cert_name)
+          namespace: $(params.ci_namespace)
+        spec:
+          secretName: $(params.secret_name)
+          duration: 8760h
+          renewBefore: 360h
+          commonName: $(params.common_name)
+          issuerRef:
+            name: selfsigning-issuer
+            kind: Issuer
+          isCA: false
+          usages:
+            - server auth
+            - client auth
+        EOF
+    - name: wait-for-secret
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+
+        echo "Waiting for secret '$(params.secret_name)' to be created..."
+        for i in {1..30}; do
+          oc get secret $(params.secret_name) -n $(params.ci_namespace) && exit 0
+          sleep 5
+        done
+
+        echo "Timed out waiting for secret."
+        exit 1
