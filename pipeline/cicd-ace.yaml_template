@@ -110,16 +110,16 @@ spec:
         
         barfile_name=$(params.barfile_name)
         project_dir=$(params.source_git_dir)/$(params.project_dir)
-        initial_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME}"
+        initial_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME}
         override_file_path=$(params.source_git_dir)/$(params.override)
-        override_bar_path="$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME%.bar}.override.bar"
+        override_bar_path=$(params.source_git_dir)/$(params.barfile_dir)/${BAR_NAME%.bar}.override.bar
                 
         mkdir -p $(params.source_git_dir)/$(params.barfile_dir)
         rm -f $(params.source_git_dir)/$(params.barfile_dir)/*.bar || true
         
         echo "barfile_name=$barfile_name"
         echo "initial_bar_path=$initial_bar_path"
-        echo "override_bar_path=$override_bar_path"        
+        echo "override_bar_path=$override_bar_path"
                 
         ibmint package --input-path $project_dir --output-bar-file $initial_bar_path        
         ibmint apply overrides $override_file_path --input-bar-file $initial_bar_path --output-bar-file $override_bar_path
