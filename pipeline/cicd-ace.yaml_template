@@ -41,7 +41,7 @@ spec:
       taskRef:
         name: build-ace-bar       
       params:
-          - name: source_git_dir
+        - name: source_git_dir
           value: "/workspace/git-ws/srcrepos"
         - name: target_git_dir
           value: "/workspace/git-ws/trgtrepos"
