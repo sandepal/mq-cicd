@@ -42,15 +42,17 @@ spec:
         name: build-ace-bar       
       params:
           - name: source_git_dir
-            value: "/workspace/git-ws/srcrepos/"
-          - name: target_git_dir
-            value: "/workspace/git-ws/trgtrepos/"
-          - name: project_dir
-            value: "ace/resources/source/gitops_demo_client"
-          - name: bar
-            value: "gitops_demo_client.bar"
-          - name: override
-            value: "ace/resources/overrides/gitops_demo_client.properties"        
+          value: "/workspace/git-ws/srcrepos"
+        - name: target_git_dir
+          value: "/workspace/git-ws/trgtrepos"
+        - name: project_dir
+          value: "ace/resources/source/gitops_demo_server"
+        - name: barfile_name
+          value: "gitops_demo_server.bar"
+        - name: barfile_dir
+          value: "ace/generated-bars"
+        - name: override
+          value: "ace/resources/overrides/gitops_demo_server.properties"        
         workspaces:
           - name: git-ws
             workspace: git-ws
