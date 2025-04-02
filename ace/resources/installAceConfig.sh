@@ -17,7 +17,7 @@ mqcert_dir=$6
 mqcert_names=$7
 csv_filename=$8
 ccdt_filename=$9
-kdb_name=$10
+kdb_name=${10}
 
 
 
@@ -62,7 +62,7 @@ cat ace-policyzip-Configuration-$namespace.yaml
 #csv
 if [ -n "$csv_filename" ]; then
   csvzip_name="${csv_filename%.csv}.zip"
-  python -m zipfile -c $csvzip_name $csv_filename
+  python -m zipfile -c $csvzip_name $source_git_dir/$config_dir/$csv_filename
   CUSTTRANSZIP_BASE64=$(base64 -w0 $csvzip_name)
   
   cat $source_git_dir/$config_dir/ace-customertransactionzip-Secret.yaml_template |

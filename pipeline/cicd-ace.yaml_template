@@ -155,7 +155,7 @@ spec:
         
         cd $source_git_dir/$mqcert_dir
         IFS=',' read cert1 cert2 <<< "$mqcert_names"        
-                
+        
         runmqakm -keydb -create -db $kdb_name.kdb -pw changeit -type cms -stash
         runmqakm -cert -create -db $kdb_name.kdb -pw changeit -label ace-personal-cert -dn "CN=ace-personal-cert"        
         runmqakm -cert -add -db $kdb_name.kdb -pw changeit -label ibmwebspheremqucqm1 -file $cert1
