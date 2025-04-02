@@ -19,6 +19,11 @@ csv_filename=$8
 ccdt_filename=$9
 kdb_name=$10
 
+
+
+set -x
+
+
 # name: namespace
 # value: {{CI_NAMESPACE}}
 # name: setupConfig_script
