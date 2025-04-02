@@ -58,7 +58,7 @@ spec:
         - name: mqcert_names
           value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"
         - name: csv_filename
-          value: "customer_transactions.csv"        
+          value: "customer-transactions.csv"        
         - name: ccdt_filename
           value: "ace-ccdt.json"
         - name: kdb_name

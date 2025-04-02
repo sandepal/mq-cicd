@@ -52,6 +52,9 @@ cd /tmp
 python -m zipfile -c $policy_name.zip $source_git_dir/$policy_dir
 MQPOLICYZIP_BASE64=$(base64 -w0 $policy_name.zip)
 
+#convert _ to - , _ is invalid for metadata.name
+policy_name=${policy_name//_/-}
+
 cat $source_git_dir/$config_dir/ace-policyzip-Configuration.yaml_template |
           sed "s#{{NAMESPACE}}#$namespace#g;" |
           sed "s#{{MQPOLICYZIP_NAME}}#$policy_name#g;" |
