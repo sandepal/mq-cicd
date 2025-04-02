@@ -74,32 +74,32 @@ spec:
         - name: git-ws
           workspace: git-ws 
 
-    ## Deploy IBM MQ
-    #- name: deploy-mq
-    #  retries: 3
-    #  runAfter:
-    #    - create-cert-{{QMGR_NAME_1}}
-    #    - create-cert-{{QMGR_NAME_2}}
-    #  taskRef:
-    #    name: execute-mq-deploy
-    #  params:
-    #    - name: ci_namespace
-    #      value: {{CI_NAMESPACE}}
-    #    - name: qmgr_name_1
-    #      value: {{QMGR_NAME_1}}
-    #    - name: qmgr_name_2
-    #      value: {{QMGR_NAME_2}}
-    #    - name: deploy_script
-    #      value: deployQM.sh
-    #    - name: checkforrunning_script
-    #      value: checkIfStarted.sh
-    #    - name: script_dir
-    #      value: "/workspace/git-ws/srcrepos/mq"
-    #  workspaces:
-    #    - name: git-ws
-    #      workspace: git-ws
-    #      
-    #      
+    # Deploy IBM MQ
+    - name: deploy-mq
+      retries: 3
+      runAfter:
+        - create-cert-{{QMGR_NAME_1}}
+        - create-cert-{{QMGR_NAME_2}}
+      taskRef:
+        name: execute-mq-deploy
+      params:
+        - name: ci_namespace
+          value: {{CI_NAMESPACE}}
+        - name: qmgr_name_1
+          value: {{QMGR_NAME_1}}
+        - name: qmgr_name_2
+          value: {{QMGR_NAME_2}}
+        - name: deploy_script
+          value: deployQM.sh
+        - name: checkforrunning_script
+          value: checkIfStarted.sh
+        - name: script_dir
+          value: "/workspace/git-ws/srcrepos/mq"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+         
     ## Test QM
     #- name: test-{{QMGR_NAME_1}}-deployment
     #  retries: 3

@@ -163,7 +163,6 @@ spec:
         
         mv $kdb_name.kdb $kdb_name.sth $source_git_dir/$config_dir        
         
-      
     - name: build-ace-configs
       image: quay.io/openshift/origin-cli:latest
       script: |

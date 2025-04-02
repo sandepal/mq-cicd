@@ -58,30 +58,28 @@ cat $source_git_dir/$config_dir/ace-policyzip-Configuration.yaml_template |
           sed "s#{{MQPOLICYZIP_BASE64}}#$MQPOLICYZIP_BASE64#g;" > ace-policyzip-Configuration-$namespace.yaml
 
 cat ace-policyzip-Configuration-$namespace.yaml
+oc apply -f ace-policyzip-Configuration-$namespace.yaml
+
 
 #csv
-if [ -n "$csv_filename" ]; then
-  csvzip_name="${csv_filename%.csv}.zip"
-  python -m zipfile -c $csvzip_name $source_git_dir/$config_dir/$csv_filename
-  CUSTTRANSZIP_BASE64=$(base64 -w0 $csvzip_name)
-  
-  cat $source_git_dir/$config_dir/ace-customertransactionzip-Secret.yaml_template |
-          sed "s#{{NAMESPACE}}#$namespace#g;" |
-          sed "s#{{CUSTTRANSZIP_NAME}}#$csvzip_name#g;" |
-          sed "s#{{CUSTTRANSZIP_BASE64}}#$CUSTTRANSZIP_BASE64#g;" > ace-customertransactionzip-Secret-$namespace.yaml
-  
-  cat ace-customertransactionzip-Secret-$namespace.yaml
-  
-  cat $source_git_dir/$config_dir/ace-customertransactionzip-Configuration.yaml_tamplate |
-          sed "s#{{NAMESPACE}}#$namespace#g;" |
-          sed "s#{{CUSTTRANSZIP_NAME}}#$csvzip_name#g;" > ace-customertransactionzip-Configuration-$namespace.yaml
-		  
-  cat ace-customertransactionzip-Configuration-$namespace.yaml
+csvzip_name="${csv_filename%.csv}.zip"
+python -m zipfile -c $csvzip_name $source_git_dir/$config_dir/$csv_filename
+CUSTTRANSZIP_BASE64=$(base64 -w0 $csvzip_name)
 
-else
-  echo "csv_name is empty. Skipping zip."
-fi
+cat $source_git_dir/$config_dir/ace-customertransactionzip-Secret.yaml_template |
+        sed "s#{{NAMESPACE}}#$namespace#g;" |
+        sed "s#{{CUSTTRANSZIP_NAME}}#$csvzip_name#g;" |
+        sed "s#{{CUSTTRANSZIP_BASE64}}#$CUSTTRANSZIP_BASE64#g;" > ace-customertransactionzip-Secret-$namespace.yaml
 
+cat ace-customertransactionzip-Secret-$namespace.yaml
+oc apply -f ace-customertransactionzip-Secret-$namespace.yaml
+
+cat $source_git_dir/$config_dir/ace-customertransactionzip-Configuration.yaml_tamplate |
+        sed "s#{{NAMESPACE}}#$namespace#g;" |
+        sed "s#{{CUSTTRANSZIP_NAME}}#$csvzip_name#g;" > ace-customertransactionzip-Configuration-$namespace.yaml
+	  
+cat ace-customertransactionzip-Configuration-$namespace.yaml
+oc apply -f ace-customertransactionzip-Configuration-$namespace.yaml
 
 #ccdt
 ccdt_name="${ccdt_filename%.json}"
@@ -93,6 +91,7 @@ cat $source_git_dir/$config_dir/ace-ccdt-Configuration.yaml_template |
           sed "s#{{CCDT_BASE64}}#$CCDT_BASE64#g;" > ace-ccdt-Configuration-$namespace.yaml
 
 cat ace-ccdt-Configuration-$namespace.yaml
+oc apply -f ace-ccdt-Configuration-$namespace.yaml
 
 #truststore
 ls -la $source_git_dir/$config_dir
@@ -125,8 +124,12 @@ cat ace-keystore-Secret-sth-$namespace.yaml
 cat ace-keystore-Configuration-kdb-$namespace.yaml
 cat ace-keystore-Configuration-sth-$namespace.yaml
 
-#serverconf
+oc apply -f ace-keystore-Secret-kdb-$namespace.yaml
+oc apply -f ace-keystore-Secret-sth-$namespace.yaml
+oc apply -f ace-keystore-Configuration-kdb-$namespace.yaml
+oc apply -f ace-keystore-Configuration-sth-$namespace.yaml
 
+#serverconf
 cat $source_git_dir/$config_dir/ace-serverconf.yaml_template |
           sed "s#{{KDBKEYSTORE_NAME}}#$kdb_name#g;" > ace-serverconf-$namespace.yaml
 
@@ -141,7 +144,7 @@ cat $source_git_dir/$config_dir/ace-serverconf-Configuration.yaml_template |
           sed "s#{{SERVERCONF_BASE64}}#$SERVERCONF_BASE64#g;" > ace-serverconf-Configuration-$namespace.yaml
 
 cat ace-serverconf-Configuration-$namespace.yaml
-
+oc apply -f ace-serverconf-Configuration-$namespace.yaml
 ls -la .
 
 
