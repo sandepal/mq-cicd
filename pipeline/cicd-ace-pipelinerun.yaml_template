@@ -25,6 +25,9 @@ spec:
     - name: git-ws
       persistentvolumeclaim:
         claimName: git-source-workspace
+    - name: git-ssh
+      secret:
+        secretName: git-ssh-key
   params:
     - name: git_source_url
       value: "{{SRCREPOS}}"
