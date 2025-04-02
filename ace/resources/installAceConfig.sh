@@ -23,7 +23,6 @@ githubcreds_name=${12}
 
 set -x
 
-
 # name: namespace
 # value: {{CI_NAMESPACE}}
 # name: setupConfig_script
@@ -44,8 +43,14 @@ set -x
 # value: "customer_transactions.csv"        
 # name: ccdt_filename
 # value: "ace-ccdt.json"
+# name: kdb_name
+# value: "ace-mqkey"
+# name: githubcreds_file
+# value: "GitHubCredentials.txt"
+# name: githubcreds_name
+# value: "github-creds"
 
-  
+
 cd /tmp
 
 #policy
@@ -169,8 +174,4 @@ cat ace-credentialsForGitHub-Configuration-$namespace.yaml
 oc apply -f ace-credentialsForGitHub-Configuration-$namespace.yaml
 
 ls -la .
-
-
-
-
 

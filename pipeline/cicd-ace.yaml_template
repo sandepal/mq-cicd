@@ -176,8 +176,7 @@ spec:
       script: |
         #!/bin/bash
         set -e
-        set -x
-        
+        set -x        
         
         setupConfig_script=$(params.setupConfig_script)
         namespace=$(params.namespace)
@@ -196,12 +195,9 @@ spec:
         $source_git_dir/$setupConfig_script \
           "$namespace" "$source_git_dir" "$config_dir" \
           "$policy_dir" "$policy_name" "$mqcert_dir" \
-          "$mqcert_names" "$csv_filename" "$ccdt_filename" "$kdb_name"
-        
-        
-        
-        
-        
+          "$mqcert_names" "$csv_filename" "$ccdt_filename" \
+          "$kdb_name" "$githubcreds_file" "$githubcreds_name"
+              
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
