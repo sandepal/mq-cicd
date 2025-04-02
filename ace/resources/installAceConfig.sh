@@ -18,8 +18,8 @@ mqcert_names=$7
 csv_filename=$8
 ccdt_filename=$9
 kdb_name=${10}
-
-
+githubcreds_file=${11}
+githubcreds_name=${12}
 
 set -x
 
@@ -148,6 +148,26 @@ cat $source_git_dir/$config_dir/ace-serverconf-Configuration.yaml_template |
 
 cat ace-serverconf-Configuration-$namespace.yaml
 oc apply -f ace-serverconf-Configuration-$namespace.yaml
+
+
+#github_creds
+GITHUBCREDS_BASE64=$(base64 -w0 $source_git_dir/$config_dir/$githubcreds_file)
+
+cat $source_git_dir/$config_dir/ace-credentialsForGitHub-Secret.yaml_template |
+        sed "s#{{NAMESPACE}}#$namespace#g;" |
+        sed "s#{{GITHUBSECRET_NAME}}#$githubcreds_name#g;" |
+        sed "s#{{GITHUBCREDS_BASE64}}#$GITHUBCREDS_BASE64#g;" > ace-credentialsForGitHub-Secret-$namespace.yaml
+
+cat ace-credentialsForGitHub-Secret-$namespace.yaml
+oc apply -f ace-credentialsForGitHub-Secret-$namespace.yaml
+
+cat $source_git_dir/$config_dir/ace-credentialsForGitHub-Configuration.yaml_template |
+        sed "s#{{NAMESPACE}}#$namespace#g;" |
+        sed "s#{{{{GITHUBSECRET_NAME}}}}#$githubcreds_name#g;" > ace-credentialsForGitHub-Configuration-$namespace.yaml
+	  
+cat ace-credentialsForGitHub-Configuration-$namespace.yaml
+oc apply -f ace-credentialsForGitHub-Configuration-$namespace.yaml
+
 ls -la .
 
 

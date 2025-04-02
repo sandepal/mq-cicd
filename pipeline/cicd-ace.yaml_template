@@ -63,6 +63,10 @@ spec:
           value: "ace-ccdt.json"
         - name: kdb_name
           value: "ace-mqkey"
+        - name: githubcreds_file
+          value: "GitHubCredentials.txt"
+        - name: githubcreds_name
+          value: "github-creds"
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -136,6 +140,10 @@ spec:
       type: string
     - name: kdb_name
       type: string
+    - name: githubcreds_file
+      type: string
+    - name: githubcreds_name
+      type: string
       
   workspaces:
     - name: git-ws
@@ -182,7 +190,8 @@ spec:
         csv_filename=$(params.csv_filename)
         ccdt_filename=$(params.ccdt_filename)
         kdb_name=$(params.kdb_name)
-        
+        githubcreds_file=$(params.githubcreds_file)
+        githubcreds_name=$(params.githubcreds_name)
          
         $source_git_dir/$setupConfig_script \
           "$namespace" "$source_git_dir" "$config_dir" \
