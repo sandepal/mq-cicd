@@ -160,12 +160,9 @@ run_pipeline() {
 
 
 run_pipeline initialise
-
 #run_pipeline infra
-
-#run_pipeline deploy-mq
-
-#run_pipeline ace
+run_pipeline deploy-mq
+run_pipeline ace
 
 
 ## cicd-initialise-pipelinerun
