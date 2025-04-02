@@ -168,7 +168,7 @@ oc apply -f ace-credentialsForGitHub-Secret-$namespace.yaml
 
 cat $source_git_dir/$config_dir/ace-credentialsForGitHub-Configuration.yaml_template |
         sed "s#{{NAMESPACE}}#$namespace#g;" |
-        sed "s#{{{{GITHUBSECRET_NAME}}}}#$githubcreds_name#g;" > ace-credentialsForGitHub-Configuration-$namespace.yaml
+        sed "s#{{GITHUBSECRET_NAME}}#$githubcreds_name#g;" > ace-credentialsForGitHub-Configuration-$namespace.yaml
 	  
 cat ace-credentialsForGitHub-Configuration-$namespace.yaml
 oc apply -f ace-credentialsForGitHub-Configuration-$namespace.yaml
