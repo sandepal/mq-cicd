@@ -49,7 +49,12 @@ spec:
           value: {{QMGR_NAME_1}}-cert-secret
         - name: common_name
           value: ibmwebspheremq{{QMGR_NAME_1}}
-    
+        - name: secrets_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
     - name: create-cert-{{QMGR_NAME_2}}
       taskRef:
         name: create-mq-cert
@@ -63,6 +68,11 @@ spec:
           value: {{QMGR_NAME_2}}-cert-secret
         - name: common_name
           value: ibmwebspheremq{{QMGR_NAME_2}}
+        - name: secrets_dir
+          value: "/workspace/git-ws/srcrepos/mq/resources"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws 
 
     # Deploy IBM MQ
     - name: deploy-mq
@@ -279,6 +289,10 @@ spec:
     - name: common_name
       type: string
       default: mq.ibm.com
+    - name: secrets_dir
+      type: string
+  workspaces:
+    - name: git-ws
   steps:
     - name: apply-cert-resources
       image: quay.io/openshift/origin-cli:latest
@@ -318,12 +332,17 @@ spec:
       script: |
         #!/bin/bash
         set -e
-
+        
         echo "Waiting for secret '$(params.secret_name)' to be created..."
-        for i in {1..30}; do
-          oc get secret $(params.secret_name) -n $(params.ci_namespace) && exit 0
+        for i in {1..30}; do          
+          if oc get secret $(params.secret_name) -n $(params.ci_namespace) > /dev/null 2>&1; then
+            echo "Secret found. Extracting cert..."
+            oc get secret $(params.secret_name) -n $(params.ci_namespace) -o jsonpath='{.data.tls\.crt}' | base64 -d > tls-$(params.secret_name).crt
+            mv tls-$(params.secret_name).crt $(params.secrets_dir)
+            exit 0
+          fi
           sleep 5
         done
-
+        
         echo "Timed out waiting for secret."
         exit 1

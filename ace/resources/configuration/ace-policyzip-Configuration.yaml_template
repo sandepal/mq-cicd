@@ -1,0 +1,9 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Configuration
+metadata:
+  name: {{MQPOLICYZIP_NAME}}
+  namespace: {{NAMESPACE}}
+spec:
+  contents: {{MQPOLICYZIP}}
+  type: policyproject
+  version: 13.0.2.1-r1

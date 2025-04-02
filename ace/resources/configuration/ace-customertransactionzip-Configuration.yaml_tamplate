@@ -1,0 +1,9 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Configuration
+metadata:
+  name: {{CUSTTRANSZIP_NAME}}
+  namespace: {{NAMESPACE}}
+spec:
+  secretName: {{CUSTTRANSZIP_NAME}}
+  type: generic
+  version: 13.0.2.1-r1

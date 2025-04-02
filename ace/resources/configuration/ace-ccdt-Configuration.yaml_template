@@ -1,0 +1,10 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: Configuration
+metadata:
+  name: {{CCDTCONFIG_NAME}}
+  namespace: {{NAMESPACE}}
+spec:
+  contents: {{CCDT_BASE64}}
+  type: mqccdt
+  version: 13.0.2.1-r1
+
