@@ -4,6 +4,6 @@ metadata:
   name: {{MQPOLICYZIP_NAME}}
   namespace: {{NAMESPACE}}
 spec:
-  contents: {{MQPOLICYZIP}}
+  contents: {{MQPOLICYZIP_BASE64}}
   type: policyproject
   version: 13.0.2.1-r1

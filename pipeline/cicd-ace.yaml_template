@@ -35,49 +35,165 @@ spec:
       default: {{QMGR_NAME_2}}    
   workspaces:
     - name: git-ws  
-  tasks:         
-    - name: build-bar-producer-1
+  tasks:
+    - name: build-ace-configs-producer-1
       retries: 3
       taskRef:
-        name: build-ace-bar       
+        name: build-ace-configs
       params:
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: setupConfig_script
+          value: "ace/resources/installAceConfig.sh"
         - name: source_git_dir
           value: "/workspace/git-ws/srcrepos"
-        - name: target_git_dir
-          value: "/workspace/git-ws/trgtrepos"
-        - name: project_dir
-          value: "ace/resources/source/gitops_demo_server"
-        - name: barfile_name
-          value: "gitops_demo_server.bar"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: override
-          value: "ace/resources/overrides/gitops_demo_server.properties"        
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-    
-    - name: build-bar-producer-2
-      retries: 3
-      taskRef:
-        name: build-ace-bar
-      params:
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: target_git_dir
-          value: "/workspace/git-ws/trgtrepos"
-        - name: project_dir
-          value: "ace/resources/source/gitops_demo_server"
-        - name: barfile_name
-          value: "gitops_demo_server.bar"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: override
-          value: "ace/resources/overrides/gitops_demo_server.properties"        
+        - name: config_dir
+          value: "ace/resources/configuration"
+        - name: policy_dir
+          value: "ace/resources/source/gitops_demo_mqpolicy"
+        - name: policy_name
+          value: "gitops_demo_mqpolicy"
+        - name: mqcert_dir
+          value: "mq/resources"
+        - name: mqcert_names
+          value: "tls-ucqm1-cert-secret.crt tls-ucqm2-cert-secret.crt"         
+        - name: csv_filename
+          value: "customer_transactions.csv"        
+        - name: ccdt_filename
+          value: "ace-ccdt.json"
+        - name: kdb_name
+          value: "ace-mqkey"
       workspaces:
         - name: git-ws
           workspace: git-ws
 
+    
+    #- name: build-bar-producer-1
+    #  retries: 3
+    #  taskRef:
+    #    name: build-ace-bar       
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: project_dir
+    #      value: "ace/resources/source/gitops_demo_server"
+    #    - name: barfile_name
+    #      value: "gitops_demo_server.bar"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: override
+    #      value: "ace/resources/overrides/gitops_demo_server.properties"        
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #
+    #- name: build-bar-producer-2
+    #  retries: 3
+    #  taskRef:
+    #    name: build-ace-bar
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: project_dir
+    #      value: "ace/resources/source/gitops_demo_server"
+    #    - name: barfile_name
+    #      value: "gitops_demo_server.bar"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: override
+    #      value: "ace/resources/overrides/gitops_demo_server.properties"        
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-ace-configs
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: namespace
+      type: string
+    - name: setupConfig_script
+      type: string
+    - name: source_git_dir
+      type: string
+    - name: config_dir
+      type: string
+    - name: policy_dir
+      type: string
+    - name: policy_name
+      type: string
+    - name: mqcert_dir
+      type: string
+    - name: mqcert_names
+      type: string
+    - name: csv_filename
+      type: string
+    - name: ccdt_filename
+      type: string
+    - name: kdb_name
+      type: string
+      
+  workspaces:
+    - name: git-ws
+  steps:
+    - name: build-ace-keystore
+      image: cp.icr.io/cp/appc/ace-server-prod:13.0.2.0-r1-20241217-074354@sha256:a535f9543528f3670f5c89d2f24fcd3be0b1a4dc5803b32eb59dc882079ab4fb
+      script: |
+        #!/bin/bash
+        set -e
+        set -x
+        
+        source_git_dir=$(params.source_git_dir)
+        config_dir=$(params.config_dir)        
+        mqcert_dir=$(params.mqcert_dir)        
+        mqcert_names=$(params.mqcert_names)
+        kdb_name=$(params.kdb_name)
+        
+        cd $source_git_dir/$mqcert_dir
+        read cert1 cert2 <<< "$mqcert_names"        
+                
+        runmqakm -keydb -create -db $kdb_name.kdb -pw changeit -type cms -stash
+        runmqakm -cert -create -db $kdb_name.kdb -pw changeit -label ace-personal-cert -dn "CN=ace-personal-cert"        
+        runmqakm -cert -add -db $kdb_name.kdb -pw changeit -label ibmwebspheremqucqm1 -file $cert1
+        runmqakm -cert -add -db $kdb_name.kdb -pw changeit -label ibmwebspheremqucqm2 -file $cert2
+        
+        mv $kdb_name.kdb $kdb_name.sth $source_git_dir/$config_dir        
+        
+      
+    - name: build-ace-configs
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        set -e
+        set -x
+        
+        
+        setupConfig_script=$(params.setupConfig_script)
+        namespace=$(params.namespace)
+        source_git_dir=$(params.source_git_dir)
+        config_dir=$(params.config_dir)
+        policy_dir=$(params.policy_dir)
+        policy_name=$(params.policy_name)
+        mqcert_dir=$(params.mqcert_dir)
+        mqcert_names=$(params.mqcert_names)
+        csv_filename=$(params.csv_filename)
+        ccdt_filename=$(params.ccdt_filename)
+        kdb_name=$(params.kdb_name)
+        
+         
+        $source_git_dir/$setupConfig_script \
+          "$namespace" "$source_git_dir" "$config_dir" \
+          "$policy_dir" "$policy_name" "$mqcert_dir" \
+          "$mqcert_names" "$csv_filename" "$ccdt_filename" "$kdb_name"
+        
+        
+        
+        
+        
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -87,8 +203,6 @@ metadata:
 spec:
   params:
     - name: source_git_dir
-      type: string
-    - name: target_git_dir
       type: string
     - name: project_dir
       type: string
