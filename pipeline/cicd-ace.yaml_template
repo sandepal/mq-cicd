@@ -56,7 +56,7 @@ spec:
         - name: mqcert_dir
           value: "mq/resources"
         - name: mqcert_names
-          value: "tls-ucqm1-cert-secret.crt tls-ucqm2-cert-secret.crt"         
+          value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"
         - name: csv_filename
           value: "customer_transactions.csv"        
         - name: ccdt_filename
@@ -154,7 +154,7 @@ spec:
         kdb_name=$(params.kdb_name)
         
         cd $source_git_dir/$mqcert_dir
-        read cert1 cert2 <<< "$mqcert_names"        
+        IFS=',' read cert1 cert2 <<< "$mqcert_names"        
                 
         runmqakm -keydb -create -db $kdb_name.kdb -pw changeit -type cms -stash
         runmqakm -cert -create -db $kdb_name.kdb -pw changeit -label ace-personal-cert -dn "CN=ace-personal-cert"        
