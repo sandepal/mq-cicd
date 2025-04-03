@@ -305,31 +305,38 @@ spec:
       script: |
         #!/bin/bash
         set -e
-
+        set -x
+        
+        qmgr_name=$(params.qmgr_name)
+        ci_namespace=$(params.ci_namespace)
+        common_name=$(params.common_name)
+        cert_name=$(params.cert_name)
+        secret_name=$(params.secret_name)
+        
         cat <<EOF | oc apply -f -
         apiVersion: cert-manager.io/v1
         kind: Issuer
         metadata:
           name: selfsigning-issuer
-          namespace: $(params.ci_namespace)
+          namespace: $ci_namespace
         spec:
           selfSigned: {}
         ---
         apiVersion: cert-manager.io/v1
         kind: Certificate
         metadata:
-          name: $(params.cert_name)
-          namespace: $(params.ci_namespace)
+          name: $cert_name
+          namespace: $ci_namespace
         spec:
-          secretName: $(params.secret_name)
+          secretName: $secret_name
           duration: 8760h
           renewBefore: 360h
-          commonName: $(params.common_name)
+          commonName: $common_name
           dnsNames:
-            - $(params.qmgr_name)-ibm-mq
-            - $(params.qmgr_name)-ibm-mq.$(params.ci_namespace)
-            - $(params.qmgr_name)-ibm-mq.$(params.ci_namespace).svc
-            - $(params.qmgr_name)-ibm-mq.$(params.ci_namespace).svc.cluster.local
+            - "$qmgr_name-ibm-mq"
+            - "$qmgr_name-ibm-mq.$ci_namespace"
+            - "$qmgr_name-ibm-mq.$ci_namespace.svc"
+            - "$qmgr_name-ibm-mq.$ci_namespace.svc.cluster.local"
           issuerRef:
             name: selfsigning-issuer
             kind: Issuer
@@ -338,6 +345,7 @@ spec:
             - server auth
             - client auth
         EOF
+        
     - name: wait-for-secret
       image: quay.io/openshift/origin-cli:latest
       script: |
