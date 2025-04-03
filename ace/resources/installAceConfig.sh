@@ -16,10 +16,11 @@ policy_name=$5
 mqcert_dir=$6
 mqcert_names=$7
 csv_filename=$8
-ccdt_filename=$9
-kdb_name=${10}
-githubcreds_file=${11}
-githubcreds_name=${12}
+kdb_name=$9
+githubcreds_file=${10}
+githubcreds_name=${11}
+qmgr_name_1=${12}
+qmgr_name_2=${13}
 
 set -x
 
@@ -41,15 +42,16 @@ set -x
 # value: "tls-ucqm1-cert-secret.crt tls-ucqm2-cert-secret.crt"         
 # name: csv_filename
 # value: "customer_transactions.csv"        
-# name: ccdt_filename
-# value: "ace-ccdt.json"
 # name: kdb_name
 # value: "ace-mqkey"
 # name: githubcreds_file
 # value: "GitHubCredentials.txt"
 # name: githubcreds_name
 # value: "github-creds"
-
+# name: qmgr_name_1
+# value: {{QMGR_NAME_1}}
+# name: qmgr_name_2
+# value: {{QMGR_NAME_2}}
 
 cd /tmp
 
@@ -90,8 +92,15 @@ cat ace-customertransactionzip-Configuration-$namespace.yaml
 oc apply -f ace-customertransactionzip-Configuration-$namespace.yaml
 
 #ccdt
-ccdt_name="${ccdt_filename%.json}"
-CCDT_BASE64=$(base64 -w0 $source_git_dir/$config_dir/$ccdt_filename)
+
+cat $source_git_dir/$config_dir/ace-ccdt.json_tamplate |
+        sed "s#{{NAMESPACE}}#$namespace#g;" |
+		sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
+		sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > ace-ccdt-$namespace.json
+
+
+ccdt_name="ace-ccdt"
+CCDT_BASE64=$(base64 -w0 $source_git_dir/$config_dir/ace-ccdt-$namespace.json)
 
 cat $source_git_dir/$config_dir/ace-ccdt-Configuration.yaml_template |
           sed "s#{{NAMESPACE}}#$namespace#g;" |

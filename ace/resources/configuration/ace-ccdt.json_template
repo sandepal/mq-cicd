@@ -12,7 +12,7 @@
                 "connection":
                 [
                     {
-                        "host": "ucqm1-ibm-mq.cp4i.svc",
+                        "host": "{{QMGR_NAME_1}}-ibm-mq.{{NAMESPACE}}.svc",
                         "port": 1414
                     }
                 ],
@@ -35,7 +35,7 @@
                 "connection":
                 [
                     {
-                        "host": "ucqm2-ibm-mq.cp4i.svc",
+                        "host": "{{QMGR_NAME_2}}-ibm-mq.{{NAMESPACE}}.svc",
                         "port": 1414
                     }
                 ],
@@ -58,11 +58,11 @@
                 "connection":
                 [
                     {
-                        "host": "ucqm1-ibm-mq.cp4i.svc",
+                        "host": "{{QMGR_NAME_1}}-ibm-mq.{{NAMESPACE}}.svc",
                         "port": 1414
                     }
                 ],
-                "queueManager": "ucqm1"
+                "queueManager": "{{QMGR_NAME_1}}"
             },
             "transmissionSecurity":
             {
@@ -81,11 +81,11 @@
                 "connection":
                 [
                     {
-                        "host": "ucqm2-ibm-mq.cp4i.svc",
+                        "host": "{{QMGR_NAME_2}}-ibm-mq.{{NAMESPACE}}.svc",
                         "port": 1414
                     }
                 ],
-                "queueManager": "ucqm2"
+                "queueManager": "{{QMGR_NAME_2}}"
             },
             "transmissionSecurity":
             {

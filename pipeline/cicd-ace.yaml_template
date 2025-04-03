@@ -32,7 +32,7 @@ spec:
     - name: qmgr_name_1
       default: {{QMGR_NAME_1}}
     - name: qmgr_name_2
-      default: {{QMGR_NAME_2}}    
+      default: {{QMGR_NAME_2}} 
   workspaces:
     - name: git-ws
     - name: git-ssh    
@@ -60,14 +60,16 @@ spec:
           value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"
         - name: csv_filename
           value: "customer-transactions.csv"        
-        - name: ccdt_filename
-          value: "ace-ccdt.json"
         - name: kdb_name
           value: "ace-mqkey"
         - name: githubcreds_file
           value: "GitHubCredentials.txt"
         - name: githubcreds_name
           value: "github-creds"
+        - name: qmgr_name_1
+          value: {{QMGR_NAME_1}}
+        - name: qmgr_name_2
+          value: {{QMGR_NAME_2}}
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -222,13 +224,15 @@ spec:
       type: string
     - name: csv_filename
       type: string
-    - name: ccdt_filename
-      type: string
     - name: kdb_name
       type: string
     - name: githubcreds_file
       type: string
     - name: githubcreds_name
+      type: string
+    - name: qmgr_name_1
+      type: string
+    - name: qmgr_name_2
       type: string
       
   workspaces:
@@ -273,16 +277,17 @@ spec:
         mqcert_dir=$(params.mqcert_dir)
         mqcert_names=$(params.mqcert_names)
         csv_filename=$(params.csv_filename)
-        ccdt_filename=$(params.ccdt_filename)
         kdb_name=$(params.kdb_name)
         githubcreds_file=$(params.githubcreds_file)
         githubcreds_name=$(params.githubcreds_name)
+        qmgr_name_1=$(params.qmgr_name_1)
+        qmgr_name_2=$(params.qmgr_name_2)
          
         $source_git_dir/$setupConfig_script \
           "$namespace" "$source_git_dir" "$config_dir" \
           "$policy_dir" "$policy_name" "$mqcert_dir" \
-          "$mqcert_names" "$csv_filename" "$ccdt_filename" \
-          "$kdb_name" "$githubcreds_file" "$githubcreds_name"
+          "$mqcert_names" "$csv_filename" "$kdb_name" \
+          "$githubcreds_file" "$githubcreds_name" "$qmgr_name_1" "$qmgr_name_2"
               
 ---
 apiVersion: tekton.dev/v1beta1
