@@ -24,18 +24,18 @@ spec:
     use: "NonProduction"
   pki:
     keys:
-    - name: personalcerts
-      secret:
-        secretName: {{QMGRNAME_2}}-cert-secret
-        items:
-          - tls.key
-          - tls.crt
+      - name: default
+        secret:
+          secretName: {{QMGRNAME_2}}-cert-secret
+          items:
+            - tls.key
+            - tls.crt
     trust:
-    - name: trustedcerts
-      secret:  
-        secretName: {{QMGRNAME_1}}-cert-secret
-        items:
-          - tls.crt 
+      - name: trustedcerts
+        secret:  
+          secretName: {{QMGRNAME_1}}-cert-secret
+          items:
+            - tls.crt 
   web:
     enabled: true
   queueManager:
