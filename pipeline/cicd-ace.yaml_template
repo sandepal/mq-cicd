@@ -81,13 +81,13 @@ spec:
         - name: source_git_dir
           value: "/workspace/git-ws/srcrepos"
         - name: project_dir
-          value: "ace/resources/source/gitops_demo_server"
+          value: "ace/resources/source/gitops_demo_client"
         - name: barfile_name
-          value: "gitops_demo_server.bar"
+          value: "gitops_demo_client.bar"
         - name: barfile_dir
           value: "ace/generated-bars"
         - name: override
-          value: "ace/resources/overrides/gitops_demo_server.properties"        
+          value: "ace/resources/overrides/gitops_demo_client.properties"        
       workspaces:
         - name: git-ws
           workspace: git-ws
