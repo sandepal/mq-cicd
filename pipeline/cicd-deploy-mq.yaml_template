@@ -333,10 +333,7 @@ spec:
           renewBefore: 360h
           commonName: $common_name
           dnsNames:
-            - "$qmgr_name-ibm-mq"
-            - "$qmgr_name-ibm-mq.$ci_namespace"
             - "$qmgr_name-ibm-mq.$ci_namespace.svc"
-            - "$qmgr_name-ibm-mq.$ci_namespace.svc.cluster.local"
           issuerRef:
             name: selfsigning-issuer
             kind: Issuer
