@@ -117,7 +117,7 @@ spec:
         - build-bar-producer-1
         - build-bar-producer-2
       taskRef:
-        name: push-to-git
+        name: push-bars-to-git
       retries: 3
       params:
         - name: source_git_dir
