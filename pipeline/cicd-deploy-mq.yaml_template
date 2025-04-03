@@ -51,7 +51,7 @@ spec:
           value: ibmwebspheremq{{QMGR_NAME_1}}
         - name: secrets_dir
           value: "/workspace/git-ws/srcrepos/mq/resources"
-        - name: queuemgr_name
+        - name: qmgr_name
           value: {{QMGR_NAME_1}}
       workspaces:
         - name: git-ws
@@ -72,7 +72,7 @@ spec:
           value: ibmwebspheremq{{QMGR_NAME_2}}
         - name: secrets_dir
           value: "/workspace/git-ws/srcrepos/mq/resources"
-        - name: queuemgr_name
+        - name: qmgr_name
           value: {{QMGR_NAME_2}}
       workspaces:
         - name: git-ws
@@ -295,7 +295,7 @@ spec:
       default: mq.ibm.com
     - name: secrets_dir
       type: string
-    - name: queuemgr_name
+    - name: qmgr_name
       type: string
   workspaces:
     - name: git-ws
@@ -326,7 +326,10 @@ spec:
           renewBefore: 360h
           commonName: $(params.common_name)
           dnsNames:
-            - $(params.queuemgr_name)-ibm-mq.$(params.ci_namespace)
+            - $(params.qmgr_name)-ibm-mq
+            - $(params.qmgr_name)-ibm-mq.$(params.ci_namespace)
+            - $(params.qmgr_name)-ibm-mq.$(params.ci_namespace).svc
+            - $(params.qmgr_name)-ibm-mq.$(params.ci_namespace).svc.cluster.local
           issuerRef:
             name: selfsigning-issuer
             kind: Issuer
