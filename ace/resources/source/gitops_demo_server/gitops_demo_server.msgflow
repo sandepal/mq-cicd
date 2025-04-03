@@ -9,8 +9,8 @@
       <nodes xmi:type="ComIbmMQInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_1" location="147,252" queueName="REQ.Q" messageDomainProperty="JSON">
         <translation xmi:type="utility:ConstantString" string="REQ.Q"/>
       </nodes>
-      <nodes xmi:type="ComIbmFileRead.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_2" location="614,257" inputDirectory="C:\ocp\demo-03-callum-onlyqm-with-argo\ace" filenamePattern="customer_transactions.csv" messageDomainProperty="DFDL" messageTypeProperty="{}:CSV">
-        <translation xmi:type="utility:ConstantString" string="Read customer_transactions"/>
+      <nodes xmi:type="ComIbmFileRead.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_2" location="614,257" inputDirectory="C:\ocp\demo-03-callum-onlyqm-with-argo\ace" filenamePattern="customer-transactions.csv" messageDomainProperty="DFDL" messageTypeProperty="{}:CSV">
+        <translation xmi:type="utility:ConstantString" string="Read customer-transactions"/>
       </nodes>
       <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_3" location="345,252" computeExpression="esql://routine/#gitops_demo_server_SetRecordNumber.Main" computeMode="exception">
         <translation xmi:type="utility:ConstantString" string="SetRecordNumber"/>
