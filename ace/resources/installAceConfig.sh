@@ -92,15 +92,13 @@ cat ace-customertransactionzip-Configuration-$namespace.yaml
 oc apply -f ace-customertransactionzip-Configuration-$namespace.yaml
 
 #ccdt
-
-cat $source_git_dir/$config_dir/ace-ccdt.json_tamplate |
+cat $source_git_dir/$config_dir/ace-ccdt.json_template |
         sed "s#{{NAMESPACE}}#$namespace#g;" |
 		sed "s#{{QMGR_NAME_1}}#$qmgr_name_1#g;" |
 		sed "s#{{QMGR_NAME_2}}#$qmgr_name_2#g;" > ace-ccdt-$namespace.json
 
-
 ccdt_name="ace-ccdt"
-CCDT_BASE64=$(base64 -w0 $source_git_dir/$config_dir/ace-ccdt-$namespace.json)
+CCDT_BASE64=$(base64 -w0 ace-ccdt-$namespace.json)
 
 cat $source_git_dir/$config_dir/ace-ccdt-Configuration.yaml_template |
           sed "s#{{NAMESPACE}}#$namespace#g;" |
