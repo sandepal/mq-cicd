@@ -4,13 +4,13 @@
     <connection>CCDT</connection>
     <destinationQueueManagerName>*ANY_QM</destinationQueueManagerName>
     <queueManagerHostname></queueManagerHostname>
-    <listenerPortNumber>1414</listenerPortNumber>
+    <listenerPortNumber></listenerPortNumber>
     <channelName></channelName>
     <CCDTUrl></CCDTUrl>
     <securityIdentity></securityIdentity>
     <useSSL>true</useSSL>
     <SSLPeerName></SSLPeerName>
-    <SSLCipherSpec></SSLCipherSpec>
+    <SSLCipherSpec>ANY_TLS12</SSLCipherSpec>
     <SSLCertificateLabel></SSLCertificateLabel>
     <MQApplName>ACE_DEMO</MQApplName>
     <reconnectOption>enabled</reconnectOption>
