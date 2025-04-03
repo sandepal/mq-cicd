@@ -113,6 +113,7 @@ spec:
     
     - name: push-bars-to-git
       runAfter:
+        - build-ace-configs
         - build-bar-producer-1
         - build-bar-producer-2
       taskRef:
