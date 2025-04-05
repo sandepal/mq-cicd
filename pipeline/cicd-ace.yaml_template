@@ -328,10 +328,8 @@ spec:
         rm -f $override_bar_path 
         ibmint package --input-path $project_dir --output-bar-file $initial_bar_path        
         ibmint apply overrides $override_file_path --input-bar-file $initial_bar_path --output-bar-file $override_bar_path
-        #mqsicreatebar -data . -a generate_test_data_server -b 6.bar
         
         echo "Generated overridden BAR: $override_bar_path"
         
         mv "$override_bar_path" "$initial_bar_path"
 
-    
