@@ -51,15 +51,13 @@ spec:
         - name: config_dir
           value: "ace/resources/configuration"
         - name: policy_dir
-          value: "ace/resources/source/gitops_demo_mqpolicy"
+          value: "ace/resources/source/generate_test_data_mqpolicy"
         - name: policy_name
-          value: "gitops_demo_mqpolicy"
+          value: "generate_test_data_mqpolicy"
         - name: mqcert_dir
           value: "mq/resources"
         - name: mqcert_names
-          value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"
-        - name: csv_filename
-          value: "customer-transactions.csv"        
+          value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"        
         - name: kdb_name
           value: "ace-mqkey"
         - name: githubcreds_file
@@ -83,13 +81,13 @@ spec:
         - name: source_git_dir
           value: "/workspace/git-ws/srcrepos"
         - name: project_dir
-          value: "ace/resources/source/gitops_demo_client"
+          value: "ace/resources/source/generate_test_data_client"
         - name: barfile_name
-          value: "gitops_demo_client.bar"
+          value: "generate_test_data_client.bar"
         - name: barfile_dir
           value: "ace/generated-bars"
         - name: override
-          value: "ace/resources/overrides/gitops_demo_client.properties"        
+          value: "ace/resources/overrides/generate_test_data_client.properties"        
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -102,13 +100,13 @@ spec:
         - name: source_git_dir
           value: "/workspace/git-ws/srcrepos"
         - name: project_dir
-          value: "ace/resources/source/gitops_demo_server"
+          value: "ace/resources/source/generate_test_data_server"
         - name: barfile_name
-          value: "gitops_demo_server.bar"
+          value: "generate_test_data_server.bar"
         - name: barfile_dir
           value: "ace/generated-bars"
         - name: override
-          value: "ace/resources/overrides/gitops_demo_server.properties"        
+          value: "ace/resources/overrides/generate_test_data_server.properties"        
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -222,8 +220,6 @@ spec:
       type: string
     - name: mqcert_names
       type: string
-    - name: csv_filename
-      type: string
     - name: kdb_name
       type: string
     - name: githubcreds_file
@@ -276,7 +272,6 @@ spec:
         policy_name=$(params.policy_name)
         mqcert_dir=$(params.mqcert_dir)
         mqcert_names=$(params.mqcert_names)
-        csv_filename=$(params.csv_filename)
         kdb_name=$(params.kdb_name)
         githubcreds_file=$(params.githubcreds_file)
         githubcreds_name=$(params.githubcreds_name)
@@ -286,8 +281,8 @@ spec:
         $source_git_dir/$setupConfig_script \
           "$namespace" "$source_git_dir" "$config_dir" \
           "$policy_dir" "$policy_name" "$mqcert_dir" \
-          "$mqcert_names" "$csv_filename" "$kdb_name" \
-          "$githubcreds_file" "$githubcreds_name" "$qmgr_name_1" "$qmgr_name_2"
+          "$mqcert_names" "$kdb_name" "$githubcreds_file" \
+          "$githubcreds_name" "$qmgr_name_1" "$qmgr_name_2"
               
 ---
 apiVersion: tekton.dev/v1beta1

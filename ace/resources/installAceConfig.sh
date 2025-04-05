@@ -15,12 +15,11 @@ policy_dir=$4
 policy_name=$5
 mqcert_dir=$6
 mqcert_names=$7
-csv_filename=$8
-kdb_name=$9
-githubcreds_file=${10}
-githubcreds_name=${11}
-qmgr_name_1=${12}
-qmgr_name_2=${13}
+kdb_name=$8
+githubcreds_file=$9
+githubcreds_name=${10}
+qmgr_name_1=${11}
+qmgr_name_2=${12}
 
 set -x
 
@@ -33,15 +32,13 @@ set -x
 # name: config_dir
 # value: "ace/resources/configuration"
 # name: policy_dir
-# value: "ace/resources/source/gitops_demo_mqpolicy"
+# value: "ace/resources/source/generate_test_data_mqpolicy"
 # name: policy_name
-# value: "gitops_demo_mqpolicy"
+# value: "generate_test_data_mqpolicy"
 # name: mqcert_dir
 # value: "mq/resources"
 # name: mqcert_names
-# value: "tls-ucqm1-cert-secret.crt tls-ucqm2-cert-secret.crt"         
-# name: csv_filename
-# value: "customer_transactions.csv"        
+# value: "tls-ucqm1-cert-secret.crt tls-ucqm2-cert-secret.crt"                
 # name: kdb_name
 # value: "ace-mqkey"
 # name: githubcreds_file
@@ -69,27 +66,6 @@ cat $source_git_dir/$config_dir/ace-policyzip-Configuration.yaml_template |
 
 cat ace-policyzip-Configuration-$namespace.yaml
 oc apply -f ace-policyzip-Configuration-$namespace.yaml
-
-
-#csv
-csvzip_name="${csv_filename%.csv}.zip"
-python -m zipfile -c $csvzip_name $source_git_dir/$config_dir/$csv_filename
-CUSTTRANSZIP_BASE64=$(base64 -w0 $csvzip_name)
-
-cat $source_git_dir/$config_dir/ace-customertransactionzip-Secret.yaml_template |
-        sed "s#{{NAMESPACE}}#$namespace#g;" |
-        sed "s#{{CUSTTRANSZIP_NAME}}#$csvzip_name#g;" |
-        sed "s#{{CUSTTRANSZIP_BASE64}}#$CUSTTRANSZIP_BASE64#g;" > ace-customertransactionzip-Secret-$namespace.yaml
-
-cat ace-customertransactionzip-Secret-$namespace.yaml
-oc apply -f ace-customertransactionzip-Secret-$namespace.yaml
-
-cat $source_git_dir/$config_dir/ace-customertransactionzip-Configuration.yaml_tamplate |
-        sed "s#{{NAMESPACE}}#$namespace#g;" |
-        sed "s#{{CUSTTRANSZIP_NAME}}#$csvzip_name#g;" > ace-customertransactionzip-Configuration-$namespace.yaml
-	  
-cat ace-customertransactionzip-Configuration-$namespace.yaml
-oc apply -f ace-customertransactionzip-Configuration-$namespace.yaml
 
 #ccdt
 cat $source_git_dir/$config_dir/ace-ccdt.json_template |
