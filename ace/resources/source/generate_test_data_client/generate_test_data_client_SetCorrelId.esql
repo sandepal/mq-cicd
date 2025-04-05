@@ -1,6 +1,6 @@
 
 
-CREATE COMPUTE MODULE gitops_demo_client_SetCorrelId
+CREATE COMPUTE MODULE generate_test_data_client_SetCorrelId
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 		-- CALL CopyMessageHeaders();
@@ -8,7 +8,6 @@ CREATE COMPUTE MODULE gitops_demo_client_SetCorrelId
 		
 		DECLARE msgId BLOB InputLocalEnvironment.WrittenDestination.MQ.DestinationData.msgId;		
 		SET OutputRoot.MQMD.CorrelId = msgId;	
-		
 		
 		RETURN TRUE;
 	END;

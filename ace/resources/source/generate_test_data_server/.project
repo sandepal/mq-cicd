@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>gitops_demo_server</name>
+	<name>generate_test_data_server</name>
 	<comment></comment>
 	<projects>
-		<project>gitops_demo_mqpolicy</project>
+		<project>generate_test_data_mqpolicy</project>
+		<project>generate_test_data_serverJava</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -108,11 +109,6 @@
 		</buildCommand>
 		<buildCommand>
 			<name>com.ibm.etools.mft.unittest.ui.TestCaseBuilder</name>
-			<arguments>
-			</arguments>
-		</buildCommand>
-		<buildCommand>
-			<name>com.ibm.dfdl.validation.dfdlBuilder</name>
 			<arguments>
 			</arguments>
 		</buildCommand>

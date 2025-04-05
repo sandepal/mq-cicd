@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <policies>
-  <policy policyType="MQEndpoint" policyName="gitops_mq_policy" policyTemplate="MQEndpoint">
+  <policy policyType="MQEndpoint" policyName="generate_test_data_mqpolicy" policyTemplate="MQEndpoint">
     <connection>CCDT</connection>
     <destinationQueueManagerName>*ANY_QM</destinationQueueManagerName>
     <queueManagerHostname></queueManagerHostname>

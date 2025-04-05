@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>gitops_demo_client</name>
+	<name>generate_test_data_client</name>
 	<comment></comment>
 	<projects>
-		<project>gitops_demo_mqpolicy</project>
+		<project>generate_test_data_mqpolicy</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
