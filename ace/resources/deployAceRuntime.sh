@@ -36,8 +36,12 @@ cd /tmp
 
 config_yaml=""
 IFS=',' read -ra configs <<< "$config_list"
-for config in "${configs[@]}"; do
-  config_yaml="${config_yaml}    - ${config}\n"
+for i in "${!configs[@]}"; do
+  if [ "$i" -eq 0 ]; then
+    config_yaml="${configs[$i]}"
+  else
+    config_yaml="${config_yaml}\n    - ${configs[$i]}"
+  fi
 done
 
 cat $source_git_dir/$config_dir/ace-IntegrationRuntime.yaml_template |
