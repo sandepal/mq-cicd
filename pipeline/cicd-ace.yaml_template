@@ -225,7 +225,7 @@ spec:
         set -x
         
         api_base_url=$(oc get ir $ir_name -o jsonpath='{.status.endpoints[*]}' | grep -o '"uri":"http://[^"]*"' | cut -d'"' -f4)        
-        api_url=$api_base_url$(params.url_path)
+        api_url="$api_base_url$(params.url_path)"
         
         echo "Checking API URL:"        
         status=$(curl -s -o /dev/null -w "%{http_code}" "$api_url")
