@@ -68,7 +68,7 @@ while [[ "$CONDITION_TYPE" != "Ready" || "$CONDITION_STATUS" != "True" ]]; do
     sleep $wait_time
 
     if [[ $time -ge $timeout ]]; then
-        echo "ERROR: Timeout reached. $OBJECT $NAME did not become READY within 30 minutes."
+        echo "ERROR: Timeout reached. IntegrationRuntime $ir_name did not become READY within 30 minutes."
         exit 1
     fi
 
