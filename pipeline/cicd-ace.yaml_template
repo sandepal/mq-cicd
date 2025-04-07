@@ -191,6 +191,52 @@ spec:
       workspaces:
         - name: git-ws
           workspace: git-ws
+    
+    - name: test-ace
+      runAfter:
+        - deploy-ace-bar-2
+      taskRef:
+        name: test-ace
+      retries: 3
+      params:
+        - name: url_path
+          value: "/get/record?type=person&count=1&detail=name;job;phone;address"
+        - name: ir_name
+          value: "ir-01"
+        
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: test-ace
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: url_path
+      type: string
+    - name: ir_name
+      type: string
+  steps:
+    - name: test-ace
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
+        
+        api_base_url=$(oc get ir $ir_name -o jsonpath='{.status.endpoints[*]}' | grep -o '"uri":"http://[^"]*"' | cut -d'"' -f4)        
+        api_url=$api_base_url$(params.url_path)
+        
+        echo "Checking API URL:"        
+        status=$(curl -s -o /dev/null -w "%{http_code}" "$api_url")
+        echo "Received HTTP status: $status"
+        
+        if [ "$status" -ne 200 ]; then
+          echo "ACE health check failed! Status: $status"
+          exit 1
+        else
+          echo "ACE health check passed! Status: $status"
+        fi
 
 ---
 apiVersion: tekton.dev/v1beta1
@@ -219,7 +265,7 @@ spec:
   workspaces:
     - name: git-ws
   steps:
-    - name: git-push
+    - name: deploy-ace-bars
       image: quay.io/openshift/origin-cli:latest
       script: |
         #!/bin/sh

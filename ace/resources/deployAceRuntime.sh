@@ -52,5 +52,29 @@ cat $source_git_dir/$config_dir/ace-IntegrationRuntime.yaml_template |
 
 cat ace-IntegrationRuntime-$namespace.yaml
 oc apply -f ace-IntegrationRuntime-$namespace.yaml
-
 ls -la .
+
+local CONDITION_TYPE=""
+local CONDITION_STATUS=""
+local wait_time=10  # Check every 10 seconds
+local time=0
+local timeout=1800  # 30 minutes
+
+while [[ "$CONDITION_TYPE" != "Ready" || "$CONDITION_STATUS" != "True" ]]; do
+    CONDITION_TYPE=$(oc get IntegrationRuntime $ir_name -n $namespace -o=jsonpath='{.status.conditions[].type}' 2>/dev/null)
+    CONDITION_STATUS=$(oc get IntegrationRuntime $ir_name -n $namespace -o=jsonpath='{.status.conditions[].status}' 2>/dev/null)
+    
+    ((time += wait_time))
+    sleep $wait_time
+
+    if [[ $time -ge $timeout ]]; then
+        echo "ERROR: Timeout reached. $OBJECT $NAME did not become READY within 30 minutes."
+        exit 1
+    fi
+
+    if [[ $time -ge 900 ]]; then
+        echo "INFO: Waited over 15 minutes..."
+    fi
+done
+	
+
