@@ -1,0 +1,27 @@
+apiVersion: appconnect.ibm.com/v1beta1
+kind: IntegrationRuntime
+metadata: 
+  name: {{IR_NAME}}  
+  namespace: {{NAMESPACE}}
+spec:
+  barURL:
+    - {{BAR_URL}}
+  configurations:
+    - {{CONFIG_NAME}}
+  flowType:
+    toolkitFlow: true
+  license:
+    accept: true
+    license: L-KPRV-AUG9NC
+    use: CloudPakForIntegrationNonProductionFREE
+  logFormat: basic
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: runtime
+          resources:
+            requests:
+              cpu: 300m
+              memory: 368Mi
+  version: 13.0.2.2-r2
