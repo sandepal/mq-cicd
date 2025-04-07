@@ -54,11 +54,11 @@ cat ace-IntegrationRuntime-$namespace.yaml
 oc apply -f ace-IntegrationRuntime-$namespace.yaml
 ls -la .
 
-local CONDITION_TYPE=""
-local CONDITION_STATUS=""
-local wait_time=10  # Check every 10 seconds
-local time=0
-local timeout=1800  # 30 minutes
+CONDITION_TYPE=""
+CONDITION_STATUS=""
+wait_time=10  # Check every 10 seconds
+time=0
+timeout=1800  # 30 minutes
 
 while [[ "$CONDITION_TYPE" != "Ready" || "$CONDITION_STATUS" != "True" ]]; do
     CONDITION_TYPE=$(oc get IntegrationRuntime $ir_name -n $namespace -o=jsonpath='{.status.conditions[].type}' 2>/dev/null)
