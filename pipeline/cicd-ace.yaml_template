@@ -146,11 +146,7 @@ spec:
       retries: 3
       params:
         - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"        
-        - name: git_target_url
-          value: {{TRGTREPOS}}
-        - name: branch
-          value: "{{BRANCH}}"
+          value: "/workspace/git-ws/srcrepos"
         - name: barfile_dir
           value: "ace/generated-bars"
         - name: barfile_name
@@ -163,6 +159,35 @@ spec:
           value: {{CI_NAMESPACE}}
         - name: config_list
           value: "ace-ccdt,ace-mqkey.kdb,ace-mqkey.sth,ace-serverconf,generate-test-data-mqpolicy,github-creds"
+        - name: deployAceRuntime_script
+          value: "ace/resources/deployAceRuntime.sh"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+          
+    - name: deploy-ace-bar-2
+      runAfter:
+        - deploy-ace-bar-1
+      taskRef:
+        name: deploy-ace-bars
+      retries: 3
+      params:
+        - name: source_git_dir
+          value: "/workspace/git-ws/srcrepos"
+        - name: barfile_dir
+          value: "ace/generated-bars"
+        - name: barfile_name
+          value: "generate_test_data_server.bar"
+        - name: config_dir
+          value: "ace/resources/configuration"
+        - name: ir_name
+          value: "ir-02"
+        - name: namespace
+          value: {{CI_NAMESPACE}}
+        - name: config_list
+          value: "ace-ccdt,ace-mqkey.kdb,ace-mqkey.sth,ace-serverconf,generate-test-data-mqpolicy,github-creds"
+        - name: deployAceRuntime_script
+          value: "ace/resources/deployAceRuntime.sh"
       workspaces:
         - name: git-ws
           workspace: git-ws
@@ -177,10 +202,6 @@ spec:
   params:
     - name: source_git_dir
       type: string
-    - name: git_target_url
-      type: string
-    - name: branch
-      type: string
     - name: barfile_dir
       type: string
     - name: barfile_name
@@ -193,7 +214,8 @@ spec:
       type: string
     - name: config_list
       type: string
-      
+    - name: deployAceRuntime_script
+      type: string
   workspaces:
     - name: git-ws
   steps:
@@ -204,16 +226,20 @@ spec:
         set -e
         set -x
         
-        git_bar_url=$(cat $(params.source_git_dir)/$(params.barfile_dir)/$(params.barfile_name).url)        
-        cd $(params.source_git_dir)/$(params.config_dir)
-        namespace
-        cat ace-IntegrationRuntime.yaml_template |
-          sed "s#{{NAMESPACE}}#$cd_namespace#g;" |
-          sed "s#{{QMGRNAME_1}}#$qmgr_name_1#g;" |
-          sed "s#{{QMGRNAME_2}}#$qmgr_name_2#g;" > ace-IntegrationRuntime-$(params.ir_name).yaml
+        deployAceRuntime_script=$(params.deployAceRuntime_script)
+        namespace=$(params.namespace)
+        source_git_dir=$(params.source_git_dir)
+        config_dir=$(params.config_dir)
+        config_list=$(params.config_list)
+        ir_name=$(params.ir_name)
+        barfile_dir=$(params.barfile_dir)
+        barfile_name=$(params.barfile_name)        
+        git_bar_url=$(cat $source_git_dir/$barfile_dir/$barfile_name.url)        
         
+        $source_git_dir/$deployAceRuntime_script \
+          "$namespace" "$source_git_dir" "$config_dir" \
+          "$ir_name" "$git_bar_url" "$config_list"
         
-
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task

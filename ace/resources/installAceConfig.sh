@@ -25,8 +25,6 @@ set -x
 
 # name: namespace
 # value: {{CI_NAMESPACE}}
-# name: setupConfig_script
-# value: "ace/resources/installAceConfig.sh"
 # name: source_git_dir
 # value: "/workspace/git-ws/srcrepos"
 # name: config_dir
