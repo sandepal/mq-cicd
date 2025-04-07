@@ -300,7 +300,7 @@ spec:
           echo "No changes to commit."
         fi
         
-        BASE_DOWNLOAD_URL="${GIT_URL%.git}/blob/$(params.branch)/cicd-bars"
+        BASE_DOWNLOAD_URL="${GIT_URL%.git}/raw/refs/heads/$(params.branch)/cicd-bars"
         
         # Loop over each .bar file we just added
         for file in cicd-bars/*.bar; do
