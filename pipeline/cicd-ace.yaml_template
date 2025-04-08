@@ -224,7 +224,7 @@ spec:
         set -e
         set -x
         
-        api_base_url=$(oc get ir $ir_name -o jsonpath='{.status.endpoints[*]}' | grep -o '"uri":"http://[^"]*"' | cut -d'"' -f4)
+        api_base_url=$(oc get ir $(params.ir_name) -o jsonpath='{.status.endpoints[*]}' | grep -o '"uri":"http://[^"]*"' | cut -d'"' -f4)
         echo $api_base_url
         api_url="$api_base_url$(params.url_path)"
         echo $api_url
