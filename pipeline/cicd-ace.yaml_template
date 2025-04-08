@@ -37,164 +37,164 @@ spec:
     - name: git-ws
     - name: git-ssh    
   tasks:
-    - name: build-ace-configs
-      retries: 3
-      taskRef:
-        name: build-ace-configs
-      params:
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: setupConfig_script
-          value: "ace/resources/installAceConfig.sh"
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: config_dir
-          value: "ace/resources/configuration"
-        - name: policy_dir
-          value: "ace/resources/source/generate_test_data_mqpolicy"
-        - name: policy_name
-          value: "generate_test_data_mqpolicy"
-        - name: mqcert_dir
-          value: "mq/resources"
-        - name: mqcert_names
-          value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"        
-        - name: kdb_name
-          value: "ace-mqkey"
-        - name: githubcreds_file
-          value: "GitHubCredentials.txt"
-        - name: githubcreds_name
-          value: "github-creds"
-        - name: qmgr_name_1
-          value: {{QMGR_NAME_1}}
-        - name: qmgr_name_2
-          value: {{QMGR_NAME_2}}
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-
-    
-    - name: build-bar-producer-1
-      retries: 3
-      taskRef:
-        name: build-ace-bar       
-      params:
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: project_dir
-          value: "ace/resources/source/generate_test_data_client"
-        - name: barfile_name
-          value: "generate_test_data_client.bar"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: override
-          value: "ace/resources/overrides/generate_test_data_client.properties"        
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-    
-    - name: build-bar-producer-2
-      retries: 3
-      taskRef:
-        name: build-ace-bar
-      params:
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: project_dir
-          value: "ace/resources/source/generate_test_data_server"
-        - name: barfile_name
-          value: "generate_test_data_server.bar"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: override
-          value: "ace/resources/overrides/generate_test_data_server.properties"        
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-    
-    - name: push-bars-to-git
-      runAfter:
-        - build-ace-configs
-        - build-bar-producer-1
-        - build-bar-producer-2        
-      taskRef:
-        name: push-bars-to-git
-      retries: 3
-      params:
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: target_git_dir
-          value: "/workspace/git-ws/trgtrepos"
-        - name: git_target_url
-          value: {{TRGTREPOS}}
-        - name: branch
-          value: "{{BRANCH}}"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: barfile_names
-          value: "generate_test_data_client.bar,generate_test_data_server.bar"
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-        - name: ssh-directory
-          workspace: git-ssh
-          
-    - name: deploy-ace-bar-1
-      runAfter:
-        - push-bars-to-git
-      taskRef:
-        name: deploy-ace-bars
-      retries: 3
-      params:
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: barfile_name
-          value: "generate_test_data_client.bar"
-        - name: config_dir
-          value: "ace/resources/configuration"
-        - name: ir_name
-          value: "ir-01"
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: config_list
-          value: "ace-ccdt,ace-mqkey.kdb,ace-mqkey.sth,ace-serverconf,generate-test-data-mqpolicy,github-creds"
-        - name: deployAceRuntime_script
-          value: "ace/resources/deployAceRuntime.sh"
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-          
-    - name: deploy-ace-bar-2
-      runAfter:
-        - deploy-ace-bar-1
-      taskRef:
-        name: deploy-ace-bars
-      retries: 3
-      params:
-        - name: source_git_dir
-          value: "/workspace/git-ws/srcrepos"
-        - name: barfile_dir
-          value: "ace/generated-bars"
-        - name: barfile_name
-          value: "generate_test_data_server.bar"
-        - name: config_dir
-          value: "ace/resources/configuration"
-        - name: ir_name
-          value: "ir-02"
-        - name: namespace
-          value: {{CI_NAMESPACE}}
-        - name: config_list
-          value: "ace-ccdt,ace-mqkey.kdb,ace-mqkey.sth,ace-serverconf,generate-test-data-mqpolicy,github-creds"
-        - name: deployAceRuntime_script
-          value: "ace/resources/deployAceRuntime.sh"
-      workspaces:
-        - name: git-ws
-          workspace: git-ws
-    
+    #- name: build-ace-configs
+    #  retries: 3
+    #  taskRef:
+    #    name: build-ace-configs
+    #  params:
+    #    - name: namespace
+    #      value: {{CI_NAMESPACE}}
+    #    - name: setupConfig_script
+    #      value: "ace/resources/installAceConfig.sh"
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: config_dir
+    #      value: "ace/resources/configuration"
+    #    - name: policy_dir
+    #      value: "ace/resources/source/generate_test_data_mqpolicy"
+    #    - name: policy_name
+    #      value: "generate_test_data_mqpolicy"
+    #    - name: mqcert_dir
+    #      value: "mq/resources"
+    #    - name: mqcert_names
+    #      value: "tls-ucqm1-cert-secret.crt,tls-ucqm2-cert-secret.crt"        
+    #    - name: kdb_name
+    #      value: "ace-mqkey"
+    #    - name: githubcreds_file
+    #      value: "GitHubCredentials.txt"
+    #    - name: githubcreds_name
+    #      value: "github-creds"
+    #    - name: qmgr_name_1
+    #      value: {{QMGR_NAME_1}}
+    #    - name: qmgr_name_2
+    #      value: {{QMGR_NAME_2}}
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #
+    #
+    #- name: build-bar-producer-1
+    #  retries: 3
+    #  taskRef:
+    #    name: build-ace-bar       
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: project_dir
+    #      value: "ace/resources/source/generate_test_data_client"
+    #    - name: barfile_name
+    #      value: "generate_test_data_client.bar"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: override
+    #      value: "ace/resources/overrides/generate_test_data_client.properties"        
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #
+    #- name: build-bar-producer-2
+    #  retries: 3
+    #  taskRef:
+    #    name: build-ace-bar
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: project_dir
+    #      value: "ace/resources/source/generate_test_data_server"
+    #    - name: barfile_name
+    #      value: "generate_test_data_server.bar"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: override
+    #      value: "ace/resources/overrides/generate_test_data_server.properties"        
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #
+    #- name: push-bars-to-git
+    #  runAfter:
+    #    - build-ace-configs
+    #    - build-bar-producer-1
+    #    - build-bar-producer-2        
+    #  taskRef:
+    #    name: push-bars-to-git
+    #  retries: 3
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: target_git_dir
+    #      value: "/workspace/git-ws/trgtrepos"
+    #    - name: git_target_url
+    #      value: {{TRGTREPOS}}
+    #    - name: branch
+    #      value: "{{BRANCH}}"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: barfile_names
+    #      value: "generate_test_data_client.bar,generate_test_data_server.bar"
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #    - name: ssh-directory
+    #      workspace: git-ssh
+    #      
+    #- name: deploy-ace-bar-1
+    #  runAfter:
+    #    - push-bars-to-git
+    #  taskRef:
+    #    name: deploy-ace-bars
+    #  retries: 3
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: barfile_name
+    #      value: "generate_test_data_client.bar"
+    #    - name: config_dir
+    #      value: "ace/resources/configuration"
+    #    - name: ir_name
+    #      value: "ir-01"
+    #    - name: namespace
+    #      value: {{CI_NAMESPACE}}
+    #    - name: config_list
+    #      value: "ace-ccdt,ace-mqkey.kdb,ace-mqkey.sth,ace-serverconf,generate-test-data-mqpolicy,github-creds"
+    #    - name: deployAceRuntime_script
+    #      value: "ace/resources/deployAceRuntime.sh"
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #      
+    #- name: deploy-ace-bar-2
+    #  runAfter:
+    #    - deploy-ace-bar-1
+    #  taskRef:
+    #    name: deploy-ace-bars
+    #  retries: 3
+    #  params:
+    #    - name: source_git_dir
+    #      value: "/workspace/git-ws/srcrepos"
+    #    - name: barfile_dir
+    #      value: "ace/generated-bars"
+    #    - name: barfile_name
+    #      value: "generate_test_data_server.bar"
+    #    - name: config_dir
+    #      value: "ace/resources/configuration"
+    #    - name: ir_name
+    #      value: "ir-02"
+    #    - name: namespace
+    #      value: {{CI_NAMESPACE}}
+    #    - name: config_list
+    #      value: "ace-ccdt,ace-mqkey.kdb,ace-mqkey.sth,ace-serverconf,generate-test-data-mqpolicy,github-creds"
+    #    - name: deployAceRuntime_script
+    #      value: "ace/resources/deployAceRuntime.sh"
+    #  workspaces:
+    #    - name: git-ws
+    #      workspace: git-ws
+    #
     - name: test-ace
-      runAfter:
-        - deploy-ace-bar-2
+    #  runAfter:
+    #    - deploy-ace-bar-2
       taskRef:
         name: test-ace
       retries: 3
@@ -224,8 +224,10 @@ spec:
         set -e
         set -x
         
-        api_base_url=$(oc get ir $ir_name -o jsonpath='{.status.endpoints[*]}' | grep -o '"uri":"http://[^"]*"' | cut -d'"' -f4)        
+        api_base_url=$(oc get ir $ir_name -o jsonpath='{.status.endpoints[*]}' | grep -o '"uri":"http://[^"]*"' | cut -d'"' -f4)
+        echo $api_base_url
         api_url="$api_base_url$(params.url_path)"
+        echo $api_url
         
         echo "Checking API URL:"        
         status=$(curl -s -o /dev/null -w "%{http_code}" "$api_url")
