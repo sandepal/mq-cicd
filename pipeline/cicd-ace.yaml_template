@@ -264,7 +264,7 @@ spec:
         chmod 644 ~/.ssh/known_hosts
                 
         mkdir -p $(params.target_git_dir)/ace-yamls
-        cp -f $(params.source_git_dir)/$(params.ace_yamls_dir)/*.bar $(params.target_git_dir)/ace-yamls/
+        cp -f $(params.source_git_dir)/$(params.ace_yamls_dir)/*.yaml $(params.target_git_dir)/ace-yamls/
         cd $(params.target_git_dir)
         
         echo "Switching git remote to SSH"
@@ -275,7 +275,7 @@ spec:
         git config user.name "tekton-bot"
         git config user.email "tekton@ci"
         git status
-        git add ace-yamls/*.bar
+        git add ace-yamls/*.yaml
         
         # Only commit if there are changes
         if ! git diff --cached --quiet; then
