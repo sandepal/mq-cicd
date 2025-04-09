@@ -203,7 +203,88 @@ spec:
           value: "/get/record?type=person&count=1&detail=name;job;phone;address"
         - name: ir_name
           value: "ir-01"
+    
+    - name: upload-ace-yamls-for-argocd
+      runAfter:
+        - test-ace
+      taskRef:
+        name: upload-ace-yamls-for-argocd
+      retries: 3
+      params:
+        - name: source_git_dir
+          value: "/workspace/git-ws/srcrepos"
+        - name: target_git_dir
+          value: "/workspace/git-ws/trgtrepos"
+        - name: git_target_url
+          value: {{TRGTREPOS}}
+        - name: branch
+          value: "{{BRANCH}}"
+        - name: ace_yamls_dir
+          value: "ace/resources/configuration/ace-yaml-for-argocd"
+      workspaces:
+        - name: git-ws
+          workspace: git-ws
+        - name: ssh-directory
+          workspace: git-ssh
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: upload-ace-yamls-for-argocd
+  namespace: {{CI_NAMESPACE}}
+spec:
+  params:
+    - name: source_git_dir
+      type: string
+    - name: target_git_dir
+      type: string
+    - name: git_target_url
+      type: string
+    - name: branch
+      type: string
+    - name: ace_yamls_dir
+      type: string
+  workspaces:
+    - name: git-ws
+    - name: ssh-directory
+  steps:
+    - name: git-push
+      image: alpine/git
+      script: |
+        #!/bin/sh
+        set -e
+        set -x
         
+        mkdir -p ~/.ssh
+        
+        cp /workspace/ssh-directory/ssh-privatekey ~/.ssh/id_rsa
+        cp /workspace/ssh-directory/known_hosts ~/.ssh/known_hosts
+        chmod 600 ~/.ssh/id_rsa
+        chmod 644 ~/.ssh/known_hosts
+                
+        mkdir -p $(params.target_git_dir)/ace-yamls
+        cp -f $(params.source_git_dir)/$(params.ace_yamls_dir)/*.bar $(params.target_git_dir)/ace-yamls/
+        cd $(params.target_git_dir)
+        
+        echo "Switching git remote to SSH"
+        GIT_URL=$(git config --get remote.origin.url)        
+        SSH_URL=$(echo "$GIT_URL" | sed -E 's|https://([^/]+)/([^/]+)/(.+)\.git|git@\1:\2/\3.git|')        
+        git remote set-url origin "$SSH_URL"
+        
+        git config user.name "tekton-bot"
+        git config user.email "tekton@ci"
+        git status
+        git add ace-yamls/*.bar
+        
+        # Only commit if there are changes
+        if ! git diff --cached --quiet; then
+          git commit -m 'Add appconnect yaml files via Tekton'
+          git push origin $(params.branch)
+        else
+          echo "No changes to commit."
+        fi
+            
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -285,6 +366,11 @@ spec:
         $source_git_dir/$deployAceRuntime_script \
           "$namespace" "$source_git_dir" "$config_dir" \
           "$ir_name" "$git_bar_url" "$config_list"
+          
+        mkdir -p $source_git_dir/$config_dir/ace-yaml-for-argocd
+        cd /tmp        
+        cp *.yaml $source_git_dir/$config_dir/ace-yaml-for-argocd
+        
         
 ---
 apiVersion: tekton.dev/v1beta1
@@ -442,7 +528,12 @@ spec:
           "$policy_dir" "$policy_name" "$mqcert_dir" \
           "$mqcert_names" "$kdb_name" "$githubcreds_file" \
           "$githubcreds_name" "$qmgr_name_1" "$qmgr_name_2"
-              
+        
+        mkdir -p $source_git_dir/$config_dir/ace-yaml-for-argocd
+        cd /tmp        
+        cp *.yaml $source_git_dir/$config_dir/ace-yaml-for-argocd
+
+        
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task

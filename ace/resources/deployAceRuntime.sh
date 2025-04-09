@@ -48,10 +48,10 @@ cat $source_git_dir/$config_dir/ace-IntegrationRuntime.yaml_template |
           sed "s#{{NAMESPACE}}#$namespace#g;" |
           sed "s#{{BAR_URL}}#$git_bar_url#g;" |
           sed "s#{{IR_NAME}}#$ir_name#g;" |
-		  sed "s#{{CONFIG_NAME}}#$config_yaml#g;" > ace-IntegrationRuntime-$namespace.yaml
+		  sed "s#{{CONFIG_NAME}}#$config_yaml#g;" > ace-IntegrationRuntime-$ir_name-$namespace.yaml
 
-cat ace-IntegrationRuntime-$namespace.yaml
-oc apply -f ace-IntegrationRuntime-$namespace.yaml
+cat ace-IntegrationRuntime-$ir_name-$namespace.yaml
+oc apply -f ace-IntegrationRuntime-$ir_name-$namespace.yaml
 ls -la .
 
 CONDITION_TYPE=""
